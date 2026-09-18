@@ -1,0 +1,4156 @@
+/* ============================================================================
+   SOQQA — dark casino theme
+   Single-file skeleton stylesheet.
+
+   Sections mirror PLAN.md §3 so this file can be split into css/base,
+   css/layout, css/components and css/pages modules without rewriting rules:
+     01  Design tokens
+     02  Reset & base
+     03  Typography & utilities
+     04  Animations
+     05  Layout (page shell, header, footer)
+     06  Components (buttons, cards, chips, badges)
+     07  Landing page
+     08  Slots
+     09  Wheel of fortune
+     10  History & empty states
+     11  Overlay roots (toast / modal)
+     12  Game feedback (reels, balance, history rows, toasts, confetti)
+     13  Responsive
+     14  Reduced motion & preferences
+   ========================================================================= */
+
+/* ==========================================================================
+   01  DESIGN TOKENS
+   ========================================================================== */
+:root {
+  /* Surfaces */
+  --bg-900: #07070b;
+  --bg-800: #0b0b12;
+  --bg-700: #12121c;
+  --surface-glass: linear-gradient(160deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018));
+  --surface-solid: #14121d;
+  --line-soft: rgba(232, 196, 106, 0.13);
+  --line-strong: rgba(232, 196, 106, 0.32);
+
+  /* Gold ramp */
+  --gold-100: #fff6d8;
+  --gold-200: #f9eec1;
+  --gold-300: #f6e3a8;
+  --gold-400: #e8c46a;
+  --gold-500: #d4a83a;
+  --gold-600: #a37d20;
+  --gold-deep: #4a3406;
+
+  /* Neon accents */
+  --neon-cyan: #39e6d0;
+  --neon-violet: #8b5cf6;
+  --neon-pink: #ff4d9d;
+
+  /* Semantic */
+  --win: #3ddc84;
+  --lose: #ff5a5f;
+
+  /* Text */
+  --text-hi: #f4f1ea;
+  --text-mid: #a9a49a;
+  --text-low: #6f6b64;
+
+  /* Typography */
+  --font-display: 'Cinzel', Georgia, 'Times New Roman', serif;
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Spacing scale */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 72px;
+
+  /* Radii */
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+
+  /* Elevation & glow */
+  --shadow-card: 0 26px 60px -34px rgba(0, 0, 0, 0.95);
+  --shadow-raised: 0 18px 40px -22px rgba(0, 0, 0, 0.9);
+  --glow-gold-sm: 0 0 16px rgba(232, 196, 106, 0.22);
+  --glow-gold-md: 0 0 34px rgba(232, 196, 106, 0.32);
+  --glow-gold-lg: 0 8px 40px rgba(232, 196, 106, 0.35), 0 0 70px rgba(232, 196, 106, 0.16);
+  --glow-neon: 0 0 26px rgba(57, 230, 208, 0.28);
+  --inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 140ms;
+  --dur-base: 240ms;
+  --dur-slow: 480ms;
+
+  /* Layers */
+  --z-aura: -1;
+  --z-header: 50;
+  --z-toast: 80;
+  --z-modal: 90;
+  /* Above the overlay on purpose: the celebration has to burst over the result
+     banner, and the backdrop would otherwise blur and dim it to nothing. */
+  --z-confetti: 95;
+
+  /* Component sizing */
+  --header-h: 76px;
+  --reel-symbol-size: clamp(34px, 6.4vw, 48px);
+  --wheel-size: min(384px, 82vw);
+  /* Wheel chrome. The pin's flick budget has to match WHEEL_SPIN.pinFlickDeg —
+     a test fails if the two ever drift. The rotation itself needs no easing
+     curve: js/ui/wheelPhysics.js integrates it frame by frame. */
+  --wheel-pin-flick-deg: 13deg;
+  /* Lamp geometry. The lamp TIMINGS are not here on purpose. The spin's chase
+     is integrated by js/ui/wheelDisc.js from the drum's own angular velocity
+     and arrives as --lamp-lit on each socket, so it needs no timing at all;
+     the win chase's cadence is written onto the lamp layer from WHEEL_FRAME.
+     Either way the sequence has exactly one home. */
+  --wheel-lamp-size: calc(var(--wheel-size) * 0.042);
+
+  color-scheme: dark;
+}
+
+/* ==========================================================================
+   02  RESET & BASE
+   ========================================================================== */
+/*
+ * Sizing, and the fact that this is an application rather than a document.
+ *
+ * The chrome rules go on every element instead of being left to inheritance,
+ * because the I-beam a browser offers over text comes from the user agent: a
+ * declaration on the element itself always outranks it, an inherited one is not
+ * guaranteed to. `user-select` is doing double duty — it removes the highlight
+ * AND the text cursor, because a browser only offers the I-beam over text it
+ * would let you select. `caret-color` closes the last case, a focusable element
+ * that would otherwise blink a caret into the chrome.
+ *
+ * The interactive allowlist just below hands the pointer back to everything
+ * that actually does something, and the form controls opt fully back in further
+ * down; nothing else in the app should ever set a cursor of its own.
+ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+  caret-color: transparent;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-hi);
+  background-color: var(--bg-900);
+  background-image:
+    radial-gradient(120% 80% at 50% -20%, rgba(232, 196, 106, 0.09), transparent 60%),
+    radial-gradient(80% 60% at 100% 0%, rgba(139, 92, 246, 0.08), transparent 55%),
+    linear-gradient(180deg, var(--bg-800) 0%, var(--bg-900) 45%, #050509 100%);
+  background-attachment: fixed;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* No grey flash box over a card when it is tapped on a touch screen. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * Everything interactive gets its hand back, explicitly. This cannot be left to
+ * the user agent: the default cursor set in the reset is an author declaration,
+ * so it would beat the UA rule that gives links their pointer.
+ */
+a,
+button,
+summary,
+label,
+.nav-link,
+.chip,
+.stepper__btn,
+input[type='checkbox'],
+input[type='radio'],
+input[type='range'] {
+  cursor: pointer;
+}
+
+img,
+svg,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+output {
+  display: inline-block;
+}
+
+/*
+ * The only things in the app that stay editable behave exactly like the native
+ * control: an I-beam over the text, a blinking caret where you type and normal
+ * selection. `user-select` has to be stated as `text`, never `auto` — `auto`
+ * resolves to the parent's used value, which is the `none` above.
+ */
+input,
+textarea,
+select,
+[contenteditable]:not([contenteditable='false']) {
+  cursor: auto;
+  caret-color: auto;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+input[type='checkbox'],
+input[type='radio'],
+input[type='range'] {
+  cursor: pointer;
+}
+
+::selection {
+  background: rgba(232, 196, 106, 0.28);
+  color: var(--gold-100);
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold-400);
+  outline-offset: 3px;
+  border-radius: var(--r-sm);
+}
+
+/* Subtle themed scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(232, 196, 106, 0.3) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(232, 196, 106, 0.22);
+  border: 3px solid transparent;
+  border-radius: var(--r-pill);
+  background-clip: content-box;
+}
+
+/* ==========================================================================
+   03  TYPOGRAPHY & UTILITIES
+   ========================================================================== */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+}
+
+/* Both SVG sprites: zero-sized and non-rendering, but never `display:none`,
+   which would stop the <use> references from resolving. */
+.svg-defs,
+.symbol-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.bg-aura {
+  position: fixed;
+  inset: -20% -10% auto -10%;
+  height: 120vh;
+  z-index: var(--z-aura);
+  pointer-events: none;
+  opacity: 0.5;
+  filter: blur(90px);
+  background:
+    radial-gradient(38% 42% at 18% 22%, rgba(232, 196, 106, 0.22), transparent 70%),
+    radial-gradient(32% 38% at 82% 12%, rgba(139, 92, 246, 0.20), transparent 72%),
+    radial-gradient(34% 40% at 62% 78%, rgba(57, 230, 208, 0.12), transparent 72%);
+  animation: aura-drift 26s var(--ease-soft) infinite alternate;
+}
+
+.gold-text {
+  background: linear-gradient(120deg, var(--gold-100), var(--gold-400) 45%, var(--gold-600));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 6px 14px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-300);
+  background: rgba(232, 196, 106, 0.08);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  box-shadow: var(--glow-gold-sm);
+}
+
+.note {
+  margin-top: var(--sp-4);
+  font-size: 0.82rem;
+  color: var(--text-low);
+  text-align: center;
+}
+
+.disclaimer {
+  max-width: 62ch;
+  margin: var(--sp-7) auto 0;
+  padding: var(--sp-3) var(--sp-4);
+  font-size: 0.85rem;
+  color: var(--text-mid);
+  text-align: center;
+  border: 1px dashed var(--line-soft);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+/* ==========================================================================
+   04  ANIMATIONS
+   ========================================================================== */
+@keyframes aura-drift {
+  from {
+    transform: translate3d(-3%, -2%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(3%, 3%, 0) scale(1.08);
+  }
+}
+
+@keyframes view-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes btn-glow {
+  0%,
+  100% {
+    box-shadow: var(--glow-gold-md), var(--inset-highlight);
+  }
+  50% {
+    box-shadow: var(--glow-gold-lg), var(--inset-highlight);
+  }
+}
+
+@keyframes dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(57, 230, 208, 0.55);
+  }
+  70% {
+    opacity: 0.75;
+    box-shadow: 0 0 0 8px rgba(57, 230, 208, 0);
+  }
+}
+
+@keyframes sheen {
+  from {
+    transform: translateX(-120%) rotate(8deg);
+  }
+  to {
+    transform: translateX(220%) rotate(8deg);
+  }
+}
+
+/* ==========================================================================
+   05  LAYOUT
+   ========================================================================== */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  background: rgba(7, 7, 11, 0.72);
+  border-bottom: 1px solid var(--line-soft);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+}
+
+.site-header__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3) var(--sp-5);
+  width: min(1200px, 100% - 2 * var(--sp-5));
+  min-height: var(--header-h);
+  margin-inline: auto;
+  padding-block: var(--sp-3);
+}
+
+/* Brand lockup */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.brand:hover {
+  transform: translateY(-1px);
+}
+
+.coin-icon {
+  width: 30px;
+  height: 30px;
+  filter: drop-shadow(0 0 10px rgba(232, 196, 106, 0.45));
+}
+
+.brand__text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.brand__name {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  background: linear-gradient(120deg, var(--gold-100), var(--gold-400) 50%, var(--gold-600));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.brand__tagline {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--text-low);
+}
+
+/* Navigation */
+.site-nav {
+  display: flex;
+  gap: var(--sp-1);
+  margin-inline: auto;
+  padding: var(--sp-1);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-pill);
+}
+
+.nav-link {
+  position: relative;
+  padding: 9px 16px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-mid);
+  border-radius: var(--r-pill);
+  transition: color var(--dur-base) var(--ease-soft), background var(--dur-base) var(--ease-soft);
+}
+
+.nav-link:hover {
+  color: var(--gold-300);
+  background: rgba(232, 196, 106, 0.08);
+}
+
+.nav-link.is-active {
+  color: var(--gold-200);
+  background: linear-gradient(180deg, rgba(232, 196, 106, 0.18), rgba(232, 196, 106, 0.06));
+  box-shadow: inset 0 0 0 1px var(--line-strong), var(--glow-gold-sm);
+}
+
+/* Balance chip */
+.balance-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 9px 18px 9px 12px;
+  background: var(--surface-glass);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-raised), var(--glow-gold-sm);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: box-shadow var(--dur-base) var(--ease-soft), transform var(--dur-base) var(--ease-out);
+}
+
+.balance-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-raised), var(--glow-gold-md);
+}
+
+.balance-chip__icon {
+  width: 26px;
+  height: 26px;
+}
+
+.balance-chip__meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.balance-chip__label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.balance-chip__value {
+  font-size: 1.06rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold-200);
+}
+
+.balance-chip__unit {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--text-mid);
+}
+
+/* Page shell */
+#view-root {
+  flex: 1;
+  width: min(1200px, 100% - 2 * var(--sp-5));
+  margin-inline: auto;
+  padding-block: var(--sp-7) var(--sp-8);
+}
+
+.view:not([hidden]) {
+  animation: view-in var(--dur-slow) var(--ease-out) both;
+}
+
+.view-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+
+.view-head__title {
+  font-size: clamp(1.6rem, 3.4vw, 2.3rem);
+  color: var(--gold-200);
+  text-shadow: 0 0 28px rgba(232, 196, 106, 0.28);
+}
+
+.view-head__subtitle {
+  margin-top: var(--sp-1);
+  font-size: 0.9rem;
+  color: var(--text-mid);
+}
+
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  width: min(1200px, 100% - 2 * var(--sp-5));
+  margin-inline: auto;
+  padding-block: var(--sp-5);
+  border-top: 1px solid var(--line-soft);
+}
+
+.site-footer__text {
+  font-size: 0.82rem;
+  color: var(--text-mid);
+}
+
+.site-footer__meta {
+  display: flex;
+  gap: var(--sp-2);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+/* ==========================================================================
+   06  COMPONENTS
+   ========================================================================== */
+
+/* --- Buttons ------------------------------------------------------------ */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: 14px 30px;
+  overflow: hidden;
+  font-size: 0.94rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  border-radius: var(--r-md);
+  transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-soft),
+    background var(--dur-base) var(--ease-soft), color var(--dur-base) var(--ease-soft);
+}
+
+.btn__label {
+  position: relative;
+  z-index: 1;
+}
+
+/* Animated sheen sweep on hover, looping for as long as the pointer rests on
+   the button. The band leaves the clipped box at both ends of every pass, so
+   the restart is off-screen and the loop reads as continuous. */
+.btn::after {
+  content: '';
+  position: absolute;
+  top: -60%;
+  left: 0;
+  width: 45%;
+  height: 220%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.btn:hover:not(:disabled)::after {
+  opacity: 1;
+  animation: sheen 0.9s var(--ease-out) infinite;
+}
+
+.btn--primary {
+  color: #241804;
+  background: linear-gradient(135deg, var(--gold-200), var(--gold-400) 48%, var(--gold-500));
+  box-shadow: var(--glow-gold-md), var(--inset-highlight);
+  animation: btn-glow 3.6s var(--ease-soft) infinite;
+}
+
+.btn--primary:hover:not(:disabled) {
+  transform: translateY(-3px);
+  animation-play-state: paused;
+  box-shadow: var(--glow-gold-lg), var(--inset-highlight);
+}
+
+.btn--primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn--ghost {
+  color: var(--gold-300);
+  background: rgba(232, 196, 106, 0.05);
+  border: 1px solid var(--line-strong);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  transform: translateY(-3px);
+  color: var(--gold-100);
+  background: rgba(232, 196, 106, 0.12);
+  box-shadow: var(--glow-gold-md);
+}
+
+.btn--small {
+  padding: 10px 20px;
+  font-size: 0.84rem;
+}
+
+.btn--spin {
+  min-width: 200px;
+  padding: 16px 44px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  animation: none;
+  transform: none;
+  color: var(--text-low);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+  filter: saturate(0.35);
+}
+
+/* --- Cards -------------------------------------------------------------- */
+.card {
+  position: relative;
+  padding: var(--sp-5);
+  background: var(--surface-glass);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card), var(--inset-highlight);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: border-color var(--dur-base) var(--ease-soft), box-shadow var(--dur-base) var(--ease-soft),
+    transform var(--dur-base) var(--ease-out);
+}
+
+.card:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-card), var(--glow-gold-sm);
+}
+
+/* --- Chips & stepper ---------------------------------------------------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-mid);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-pill);
+  transition: color var(--dur-base) var(--ease-soft), background var(--dur-base) var(--ease-soft),
+    box-shadow var(--dur-base) var(--ease-soft), transform var(--dur-base) var(--ease-out);
+}
+
+.chip:hover:not(:disabled) {
+  transform: translateY(-2px);
+  color: var(--gold-200);
+  background: rgba(232, 196, 106, 0.12);
+  box-shadow: var(--glow-gold-sm);
+}
+
+.chip.is-active {
+  color: var(--gold-100);
+  background: linear-gradient(180deg, rgba(232, 196, 106, 0.22), rgba(232, 196, 106, 0.08));
+  border-color: var(--line-strong);
+  box-shadow: var(--glow-gold-sm);
+}
+
+.chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1);
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-pill);
+}
+
+.stepper__btn {
+  display: grid;
+  place-items: center;
+  /* 44px is the smallest comfortable thumb target (iOS HIG / Material). */
+  width: 44px;
+  height: 44px;
+  font-size: 1.15rem;
+  color: var(--gold-300);
+  border-radius: 50%;
+  transition: background var(--dur-base) var(--ease-soft), box-shadow var(--dur-base) var(--ease-soft),
+    color var(--dur-base) var(--ease-soft);
+}
+
+.stepper__btn:hover:not(:disabled) {
+  color: var(--gold-100);
+  background: rgba(232, 196, 106, 0.16);
+  box-shadow: var(--glow-gold-sm);
+}
+
+.stepper__btn:disabled {
+  cursor: not-allowed;
+  color: var(--text-low);
+}
+
+.stepper__value {
+  min-width: 84px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--gold-200);
+}
+
+/* ==========================================================================
+   07  LANDING PAGE
+   ========================================================================== */
+.hero {
+  max-width: 940px;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 7px 16px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  background: rgba(57, 230, 208, 0.08);
+  border: 1px solid rgba(57, 230, 208, 0.28);
+  border-radius: var(--r-pill);
+  box-shadow: var(--glow-neon);
+}
+
+.eyebrow__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  animation: dot-pulse 2.4s var(--ease-soft) infinite;
+}
+
+.hero__title {
+  margin-top: var(--sp-5);
+  font-size: clamp(2.1rem, 5.6vw, 3.9rem);
+  text-shadow: 0 0 46px rgba(232, 196, 106, 0.2);
+}
+
+.hero__lead {
+  max-width: 62ch;
+  margin: var(--sp-4) auto 0;
+  font-size: clamp(0.95rem, 1.6vw, 1.06rem);
+  color: var(--text-mid);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-6);
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sp-3);
+  margin-top: var(--sp-7);
+}
+
+.stat-tile {
+  padding: var(--sp-4);
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  transition: transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-soft);
+}
+
+.stat-tile:hover {
+  transform: translateY(-3px);
+  border-color: var(--line-strong);
+}
+
+.stat-tile__label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.stat-tile__value {
+  display: block;
+  margin-top: var(--sp-2);
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold-200);
+}
+
+.stat-tile__value em {
+  font-size: 0.75rem;
+  font-style: normal;
+  letter-spacing: 0.08em;
+  color: var(--text-mid);
+}
+
+.feature-grid {
+  display: grid;
+  /* Auto-fitting tracks rather than a fixed count: the landing shows one card
+     per game and the column count follows the viewport instead of needing an
+     edit every time a game is added. */
+  grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+  gap: var(--sp-4);
+  margin-top: var(--sp-5);
+  text-align: left;
+}
+
+.feature-card__icon {
+  font-size: 1.7rem;
+  filter: drop-shadow(0 0 12px rgba(232, 196, 106, 0.35));
+}
+
+.feature-card__title {
+  margin-top: var(--sp-3);
+  font-size: 1.06rem;
+  color: var(--gold-200);
+}
+
+.feature-card__text {
+  margin-top: var(--sp-2);
+  font-size: 0.9rem;
+  color: var(--text-mid);
+}
+
+/* ==========================================================================
+   08  SLOTS
+   ========================================================================== */
+.game-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+  gap: var(--sp-4);
+  align-items: start;
+}
+
+.cabinet__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
+.cabinet__title {
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-300);
+}
+
+.cabinet__hint {
+  font-size: 0.78rem;
+  color: var(--text-low);
+}
+
+/* The slots cabinet runs deliberately dark: the surface is nearly opaque black
+   and the hover lift keeps that shade instead of adding the generic gold bloom,
+   so the only light in the viewport is the light the game earns. */
+.cabinet--slots {
+  background: linear-gradient(180deg, rgba(11, 11, 16, 0.92), rgba(6, 6, 10, 0.88));
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.cabinet--slots:hover {
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-card), var(--inset-highlight);
+}
+
+/* Reel window — a machined glass cabinet kept deliberately under-lit: deep
+   inner shadows clamp the aperture down to near black, a diagonal reflection
+   catches the light, and a faint row glow sits behind the drums. There is no
+   ambient gold at rest and no painted win line — the cabinet stays stealthy
+   until a spin actually pays (see the celebration rules in section 12). */
+.reel-window {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  /* Isolated so the negative z-index spotlight below stays behind the drums
+     but still in front of this element's own background. */
+  isolation: isolate;
+  /* The drum geometry, in one place: the three-row aperture is exactly this
+     tall, and `--reel-pitch` is the distance between two symbols on the strip.
+     js/ui/reelView.js writes the position as a plain multiple of the pitch, so
+     nothing here has to be measured in JavaScript. */
+  --reel-cell: calc(var(--reel-symbol-size) * 1.45);
+  --reel-gap: var(--sp-2);
+  --reel-pitch: calc(var(--reel-cell) + var(--reel-gap));
+  --reel-window-h: calc(3 * var(--reel-cell) + 2 * var(--reel-gap));
+  /* Must match REEL_TURN.phases.landingMs — the housing nudge and the lock
+     glint both read this. Asserted by tests/symbols.test.mjs. */
+  --reel-lock-ms: 600ms;
+  /* Kept in a variable so the spinning/winning states can deepen the glow
+     without losing the depth of the shadow stack. */
+  --reel-window-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 0 42px rgba(0, 0, 0, 0.84),
+    inset 0 30px 52px -26px rgba(0, 0, 0, 0.98),
+    inset 0 -30px 52px -26px rgba(0, 0, 0, 0.98),
+    0 26px 54px -34px rgba(0, 0, 0, 0.98);
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(232, 196, 106, 0.035), transparent 58%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.86), rgba(0, 0, 0, 0.64));
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--r-lg);
+  /* No ambient bloom at rest — the glow is earned by a win. */
+  box-shadow: var(--reel-window-shadow);
+}
+
+/* Faint row glow behind the drums. Deliberately dim: it is depth, not light. */
+.reel-window::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: calc(var(--reel-symbol-size) * 1.7);
+  transform: translateY(-50%);
+  background: radial-gradient(64% 100% at 50% 50%, rgba(232, 196, 106, 0.05), transparent 72%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Celebration layer. Two independent parts so their animations never fight
+   over the same property: this element is the bloom the sweep leaves behind,
+   and its ::before is the band of light that travels across the cabinet.
+   Completely inert at rest — opacity 0, no animation — so a losing stop stays
+   dark and quiet. */
+.reel-window__lights {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+  background: radial-gradient(72% 120% at 50% 50%, rgba(232, 196, 106, 0.34), transparent 74%);
+}
+
+.reel-window__lights::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    104deg,
+    transparent 34%,
+    rgba(255, 246, 216, 0.26) 44%,
+    rgba(255, 246, 216, 0.7) 50%,
+    rgba(255, 246, 216, 0.26) 56%,
+    transparent 66%
+  );
+  opacity: 0;
+  transform: translate3d(-70%, 0, 0);
+}
+
+/* Glass reflection: one diagonal sweep laid over everything. */
+.reel-window::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(116deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.03) 24%, transparent 46%),
+    radial-gradient(130% 62% at 16% 0%, rgba(255, 255, 255, 0.06), transparent 60%);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* One reel drum — an *aperture*, not a list of cells. It is exactly three rows
+   tall, clips what it contains, and lets a long strip of symbols slide behind
+   it. Nothing in here is ever re-created: the strip only moves. */
+.reel {
+  position: relative;
+  height: var(--reel-window-h);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--r-md);
+  background:
+    /* Inner backlight: lifts with the drum's speed, so a fast drum reads as
+       lit motion through the glass. */
+    radial-gradient(
+      68% 46% at 50% 50%,
+      rgba(232, 196, 106, var(--reel-drum-light, 0.03)),
+      transparent 72%
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(0, 0, 0, 0.52) 52%, rgba(0, 0, 0, 0.64));
+  box-shadow:
+    inset 0 20px 26px -18px rgba(0, 0, 0, 0.99),
+    inset 0 -20px 26px -18px rgba(0, 0, 0, 0.99),
+    inset 0 0 38px rgba(0, 0, 0, 0.72);
+}
+
+/* The strip: a fixed column of symbols that is only ever translated. The whole
+   spin is one number — `--reel-offset`, in cell heights — which is why the
+   motion is continuous rather than a sequence of steps. Deliberately no
+   `transition` (the offset is already updated every frame) and deliberately no
+   `filter`: the symbols stay perfectly crisp and legible from the first frame to
+   the last, and the speed is what reads as motion. */
+.reel-strip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--reel-gap);
+  transform: translate3d(0, calc(var(--reel-offset, 0) * var(--reel-pitch)), 0);
+}
+
+/* Promoted only while a drum is actually turning, so the layer's memory is
+   handed back as soon as the cabinet is idle. Transform only, so the strip
+   never leaves the compositor. */
+.reel.is-turning .reel-strip {
+  will-change: transform;
+}
+
+/* A brief mechanical glint across the drum as the drum seats. Kept deliberately
+   low — it is a housing cue, not a celebration — and it only runs on a paying
+   turn (see `.reel-window.is-paying` below). */
+.reel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  background: radial-gradient(
+    82% 72% at 50% 50%,
+    rgba(255, 242, 205, 0.2),
+    rgba(232, 196, 106, 0.08) 58%,
+    transparent 78%
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Symbols: the vector art carries the 3D gradients and gloss, and CSS adds the
+   lighting — a contact shadow, an ambient drop and a tight bevel highlight. */
+.reel-symbol {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  height: var(--reel-cell);
+  font-size: var(--reel-symbol-size);
+  line-height: 1;
+  filter:
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.18))
+    drop-shadow(0 6px 6px rgba(0, 0, 0, 0.62))
+    drop-shadow(0 14px 24px rgba(0, 0, 0, 0.68));
+  transition:
+    transform var(--dur-base) var(--ease-back),
+    filter var(--dur-base) var(--ease-soft),
+    opacity var(--dur-base) var(--ease-soft);
+}
+
+.reel-symbol__art {
+  display: block;
+  width: calc(var(--reel-symbol-size) * 1.34);
+  height: calc(var(--reel-symbol-size) * 1.34);
+}
+
+.reel-summary {
+  margin-top: var(--sp-4);
+  font-size: 0.84rem;
+  color: var(--text-mid);
+  text-align: center;
+}
+
+/* The wild mark inside the cabinet legend: the same art as the drum. */
+.note__icon {
+  display: inline-block;
+  width: 1.2em;
+  height: 1.2em;
+  margin-right: 2px;
+  vertical-align: -0.3em;
+}
+
+/* Bet controls */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-top: var(--sp-5);
+}
+
+.controls--center {
+  justify-content: center;
+}
+
+.bet-control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.bet-control__label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.quick-bets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+/* Paytable */
+.paytable__title,
+.legend__title {
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-300);
+}
+
+.paytable__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+}
+
+.paytable__head {
+  display: grid;
+  grid-template-columns: 32px 1fr auto auto;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+  padding: 0 var(--sp-3);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.paytable__head > span:first-child {
+  grid-column: 1 / 3;
+}
+
+.paytable__head > span:not(:first-child) {
+  min-width: 46px;
+  text-align: right;
+}
+
+.paytable__row {
+  display: grid;
+  grid-template-columns: 32px 1fr auto auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 9px var(--sp-3);
+  border-radius: var(--r-sm);
+  transition: background var(--dur-base) var(--ease-soft);
+}
+
+.paytable__row:hover {
+  background: rgba(232, 196, 106, 0.07);
+}
+
+.paytable__symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  font-size: 1.25rem;
+}
+
+.paytable__symbol-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
+}
+
+.paytable__name {
+  font-size: 0.9rem;
+  color: var(--text-mid);
+}
+
+.paytable__mult {
+  min-width: 46px;
+  font-size: 0.94rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--gold-200);
+}
+
+/* Two-of-a-kind column — deliberately calmer than the triple column. */
+.paytable__mult--pair {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-mid);
+}
+
+.paytable__foot {
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-3);
+  font-size: 0.78rem;
+  color: var(--text-low);
+  border-top: 1px solid var(--line-soft);
+}
+
+/* ==========================================================================
+   08.5  MINES (5x5 xazina)
+   --------------------------------------------------------------------------
+   A board of 25 coins: closed gold-bordered metal at rest, a gem or a mine
+   once turned. Three things are load-bearing here.
+
+   • The flip is a real 3D turn. Each tile keeps a `preserve-3d` inner holding
+     two back-to-back faces, and revealing it rotates the inner 180 degrees; the
+     board supplies ONE `perspective`, so every tile shares a vanishing point
+     instead of each one having its own and reading as a sticker swap. The two
+     faces are hidden from each other with `backface-visibility`, which is what
+     stops the coin showing through the lid mid-turn.
+
+   • `--mines-flip-ms` is the length of that turn, and js/ui/minesGrid.js
+     overwrites it from MINES.flipMs. The declaration here is the no-JS/
+     pre-boot default; a test fails if it ever drifts from the config, because
+     the view times the end-of-round reveal off the same number.
+
+   • The celebration is earned. `.is-gem` blooms gold and `.is-mine` throws a
+     dark-red ring, and both only exist on a tile that has actually been
+     revealed — a closed board is completely still. The turn itself is weighty
+     rather than quick: the easing below passes the upright by a degree or two
+     and settles back (`cubic-bezier(0.4, 0.72, 0.26, 1.08)`, peak ≈ 1.011 of
+     the rotation) instead of stopping dead on it.
+
+   • Nothing here animates on a `filter`. The gem's drop shadow sits on the
+     static slot rather than on the art that scales, so a reveal composites a
+     transform and an opacity and nothing else — 25 tiles can be mid-animation
+     without the board dropping frames.
+   ========================================================================== */
+.game-layout--mines {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+}
+
+.cabinet--mines {
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- the board's table -------------------------------------------------- */
+/*
+ * The table the board sits in. It is a recessed plate rather than a card: three
+ * concentric insets do the work of a bezel — a hard dark rim at the very edge, a
+ * machined gold hairline inside it, and the soft well that the tiles are bedded
+ * into — plus a vignette that darkens the plate's own edges so the 25 coins read
+ * as sitting IN the table instead of on top of it.
+ */
+.mines-stage {
+  position: relative;
+  padding: var(--sp-4);
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(232, 196, 106, 0.06), transparent 60%),
+    radial-gradient(130% 120% at 50% 110%, rgba(0, 0, 0, 0.72), transparent 62%),
+    linear-gradient(180deg, #0a0910, #07060c);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-lg);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.9),
+    inset 0 0 0 2px rgba(232, 196, 106, 0.1),
+    inset 0 3px 22px rgba(0, 0, 0, 0.86),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.035),
+    0 30px 60px -40px rgba(0, 0, 0, 0.95);
+}
+
+/*
+ * The light that washes across the table when a round is banked. It lives under
+ * the tiles (the grid is z-index 1) and is drawn only on a win, so an idle or
+ * losing board costs nothing: one gradient, one sweep, one repaint.
+ */
+.mines-stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    transparent 34%,
+    rgba(255, 246, 216, 0.16) 50%,
+    transparent 66%
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mines-stage.is-win::after {
+  animation: mines-table-sweep 900ms var(--ease-out) both;
+}
+
+@keyframes mines-table-sweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-60%) rotate(0.001deg);
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(60%) rotate(0.001deg);
+  }
+}
+
+/*
+ * The bloom that comes off the table when a round ends. It sits BELOW the tiles
+ * (z-index 0 against the board's 1) and spills past the stage on purpose, so the
+ * light reads as coming from under the board rather than from a box around it.
+ * One static gradient, animated on nothing but its own opacity.
+ */
+.mines-stage__glow {
+  position: absolute;
+  inset: -8%;
+  z-index: 0;
+  background: radial-gradient(circle, rgba(232, 196, 106, 0.3), rgba(232, 196, 106, 0) 62%);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-slow) var(--ease-soft);
+}
+
+.mines-stage.is-win .mines-stage__glow {
+  opacity: 1;
+}
+
+/* A big cash out is the same light, turned up — the tier is the only thing that
+   changes, so the two cannot drift apart. */
+.mines-stage.is-win.is-big .mines-stage__glow {
+  background: radial-gradient(circle, rgba(255, 246, 216, 0.42), rgba(232, 196, 106, 0) 66%);
+}
+
+.mines-stage.is-lose .mines-stage__glow {
+  background: radial-gradient(circle, rgba(224, 16, 47, 0.32), rgba(224, 16, 47, 0) 62%);
+  opacity: 0.6;
+}
+
+.mines-grid {
+  --mines-flip-ms: 460ms;
+  --mines-ripple-step: 38ms;
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(var(--mines-columns, 5), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--mines-rows, 5), minmax(0, 1fr));
+  gap: clamp(5px, 1.1vw, 10px);
+  width: 100%;
+  max-width: 520px;
+  margin-inline: auto;
+  aspect-ratio: 1 / 1;
+  perspective: 900px;
+}
+
+/*
+ * While the end-of-round wave runs, every tile that has not turned yet is held
+ * back. The wave then reads as light spreading out from the mine rather than as
+ * 24 tiles flipping on their own; it is one opacity on a closed face, dropped the
+ * moment the last tile lands. Opacity alone on purpose — a filter here would put
+ * 24 rasterising elements on screen for the whole reveal.
+ */
+.mines-grid.is-revealing .mines-tile:not(.is-revealed) .mines-tile__face--back {
+  opacity: 0.5;
+}
+
+/* --- one tile ----------------------------------------------------------- */
+.mines-tile {
+  position: relative;
+  padding: 0;
+  overflow: visible;
+  background: none;
+  border: 0;
+  border-radius: clamp(6px, 1.3vw, 12px);
+  aspect-ratio: 1 / 1;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+/*
+ * No cursor is declared here on purpose, in either state. A tile is a button,
+ * so the shell's `button { cursor: pointer }` already hands it the hand, and a
+ * disabled tile falls back to the shell's `* { cursor: default }` — which is
+ * exactly right for a tile that is not tappable. Declaring either one locally
+ * would also break the contract tests/wiring.test.mjs enforces: `cursor:
+ * default` is allowed in exactly one rule, so that nothing below can quietly
+ * flatten a button's hand back into an arrow.
+ */
+.mines-tile:not(:disabled):hover {
+  transform: translateY(-4px) scale(1.012);
+}
+
+.mines-tile:not(:disabled):active {
+  transform: translateY(-1px) scale(0.972);
+}
+
+.mines-tile:focus-visible {
+  outline: 2px solid var(--gold-400);
+  outline-offset: 3px;
+}
+
+/*
+ * The turning part. Both the tile and the inner keep `preserve-3d`, so the
+ * rotation happens in three dimensions rather than being flattened into the
+ * board's plane on the way down.
+ */
+.mines-tile__inner {
+  position: absolute;
+  inset: 0;
+  display: block;
+  transform-style: preserve-3d;
+  transform: rotateY(0deg) translateZ(0);
+  /*
+   * The turn: 460 ms on a curve whose y-controls run 0.72 then 1.08, so the lid
+   * is slow off the mark, drives through the upright and tips ~2° past it before
+   * settling back onto the face. The overshoot is what reads as weight — a curve
+   * that lands exactly on 180° reads as a switch. tests/mines.test.mjs solves
+   * this curve and fails it if the overshoot ever leaves a controlled band.
+   */
+  transition: transform var(--mines-flip-ms) cubic-bezier(0.4, 0.72, 0.26, 1.08);
+}
+
+.mines-tile.is-revealed .mines-tile__inner {
+  transform: rotateY(180deg) translateZ(0);
+}
+
+.mines-tile__face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: inherit;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  /* Only the hold-back during the end-of-round wave animates this. */
+  transition: opacity var(--dur-fast) var(--ease-soft);
+}
+
+/* --- closed: brushed metal under a gold hairline ------------------------ */
+/*
+ * A sealed coin. Four light sources do the work: a diagonal brushed sweep across
+ * the metal, a warm bounce off the top-left, a machined gold ring struck just
+ * inside the rim (`inset 0 0 0 2px` under a hairline), and a top bevel that
+ * catches the room. The `::before` is the sheen that crosses it on hover; the
+ * `::after` is the boss struck in the middle.
+ */
+.mines-tile__face--back {
+  background:
+    linear-gradient(
+      112deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.02) 20%,
+      rgba(255, 255, 255, 0.07) 37%,
+      rgba(0, 0, 0, 0.2) 58%,
+      rgba(255, 255, 255, 0.05) 79%,
+      rgba(0, 0, 0, 0.26) 100%
+    ),
+    radial-gradient(130% 110% at 28% -6%, rgba(255, 246, 216, 0.11), transparent 56%),
+    linear-gradient(180deg, #1c1a27, #0d0c15);
+  border: 1px solid rgba(232, 196, 106, 0.17);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 1px 0 0 rgba(255, 246, 216, 0.05),
+    inset 0 -14px 24px -14px rgba(0, 0, 0, 0.95),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.42),
+    inset 0 0 0 3px rgba(232, 196, 106, 0.13),
+    0 10px 20px -14px rgba(0, 0, 0, 0.95),
+    0 2px 0 -1px rgba(232, 196, 106, 0.08);
+}
+
+/* The sweeping highlight. Present but invisible until the tile is hovered. */
+.mines-tile__face--back::before {
+  content: '';
+  position: absolute;
+  top: -30%;
+  bottom: -30%;
+  left: 0;
+  width: 42%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 246, 216, 0.16) 50%,
+    transparent
+  );
+  opacity: 0;
+  transform: translateX(-140%) rotate(8deg);
+  pointer-events: none;
+}
+
+/* The embossed mark of a sealed coin — a struck boss, not a picture. */
+.mines-tile__face--back::after {
+  content: '';
+  width: 34%;
+  height: 34%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255, 246, 216, 0.24), rgba(232, 196, 106, 0.06) 58%, transparent 74%),
+    linear-gradient(160deg, rgba(0, 0, 0, 0.3), rgba(255, 255, 255, 0.04));
+  box-shadow:
+    inset 0 0 0 1px rgba(232, 196, 106, 0.2),
+    inset 0 -6px 10px -6px rgba(0, 0, 0, 0.9);
+}
+
+.mines-tile:not(:disabled):hover .mines-tile__face--back {
+  border-color: rgba(232, 196, 106, 0.46);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 1px 0 0 rgba(255, 246, 216, 0.07),
+    inset 0 -14px 24px -14px rgba(0, 0, 0, 0.95),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.42),
+    inset 0 0 0 3px rgba(232, 196, 106, 0.34),
+    0 14px 26px -16px rgba(0, 0, 0, 0.95),
+    var(--glow-gold-sm);
+}
+
+/*
+ * The sheen is its own keyframes rather than the shared `sheen` pair: that one
+ * animates the transform only, so the band would snap back to the left edge at
+ * full opacity when the animation finished. Here it fades in and out on the way
+ * across, and the base state is invisible again the moment it is over.
+ */
+.mines-tile:not(:disabled):hover .mines-tile__face--back::before {
+  animation: mines-tile-sheen 640ms var(--ease-out);
+}
+
+@keyframes mines-tile-sheen {
+  0% {
+    opacity: 0;
+    transform: translateX(-150%) rotate(8deg);
+  }
+
+  34% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(260%) rotate(8deg);
+  }
+}
+
+/* --- revealed: the coin ------------------------------------------------- */
+.mines-tile__face--front {
+  background: linear-gradient(170deg, #12111b, #0a0910);
+  border: 1px solid rgba(232, 196, 106, 0.18);
+  box-shadow:
+    inset 0 2px 16px rgba(0, 0, 0, 0.88),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.4);
+  transform: rotateY(180deg);
+}
+
+/*
+ * A gem tile is a lit vault, not a sticker: a warm bounce from above, a
+ * prismatic conic ring that suggests facets catching the light from four sides,
+ * and a well deep enough that the stone reads as sitting in it. All static — the
+ * only things that move on a reveal are the bloom, the sparks and the art.
+ */
+.mines-tile.is-gem .mines-tile__face--front {
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255, 246, 216, 0.28), rgba(232, 196, 106, 0.09) 46%, transparent 74%),
+    conic-gradient(
+      from 45deg,
+      rgba(255, 246, 216, 0.1),
+      rgba(232, 196, 106, 0.01) 22%,
+      rgba(255, 246, 216, 0.08) 47%,
+      rgba(232, 196, 106, 0.01) 72%,
+      rgba(255, 246, 216, 0.1)
+    ),
+    linear-gradient(170deg, #17131f, #09080e);
+  border-color: rgba(232, 196, 106, 0.42);
+  box-shadow:
+    inset 0 0 26px rgba(0, 0, 0, 0.9),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 3px rgba(232, 196, 106, 0.16);
+}
+
+/*
+ * A mine is a dark-red ember in a sealed well: the crimson is held to the middle
+ * so the rim stays near-black, which is what keeps the reveal premium instead of
+ * loudly red. The shock rings are the front face's own `::after` and the shock
+ * layer, one after the other.
+ */
+.mines-tile.is-mine .mines-tile__face--front {
+  background:
+    radial-gradient(circle at 50% 52%, rgba(224, 16, 47, 0.4), rgba(120, 6, 20, 0.22) 46%, rgba(6, 3, 5, 0.94) 78%),
+    linear-gradient(170deg, #170a10, #080407);
+  border-color: rgba(224, 16, 47, 0.44);
+  box-shadow:
+    inset 0 0 30px rgba(0, 0, 0, 0.92),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 3px rgba(224, 16, 47, 0.14);
+}
+
+.mines-tile__art-slot {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+/*
+ * The sparks a gem throws. Each one is a dot at the tile's centre that is rotated
+ * to its own spoke (`--a`, written by js/ui/minesGrid.js when the board is built)
+ * and then pushed out along it, so four sparks leave in four directions from one
+ * set of keyframes and `--i` alone staggers them.
+ *
+ * They exist on every tile and are invisible until a gem turns: nothing is
+ * created or destroyed at reveal time.
+ */
+.mines-tile__spark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7%;
+  height: 7%;
+  margin: -3.5% 0 0 -3.5%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffdf2, rgba(255, 224, 130, 0.9) 46%, rgba(232, 196, 106, 0) 74%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mines-tile.is-gem.is-revealed .mines-tile__spark {
+  animation: mines-spark-throw 720ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 46ms);
+}
+
+@keyframes mines-spark-throw {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--a, 0deg)) translateY(-6%) scale(0.35);
+  }
+
+  26% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a, 0deg)) translateY(-460%) scale(0.15);
+  }
+}
+
+/*
+ * The contact shadow lives on the SLOT, which never animates, and the art below
+ * it scales with a bare transform. A drop shadow on the art would be re-rastered
+ * on every frame of the settle, and 24 gems settling at once is the one moment
+ * this board has to stay at frame rate.
+ */
+.mines-tile__art-slot {
+  filter: drop-shadow(0 5px 9px rgba(0, 0, 0, 0.7));
+}
+
+/* The gem is the slot sprite's brilliant cut, the mine the board's own glyph. */
+.mines-tile__art {
+  display: block;
+  width: 66%;
+  height: 66%;
+}
+
+.mines-tile.is-gem .mines-tile__art {
+  filter: drop-shadow(0 0 10px rgba(255, 246, 216, 0.35));
+}
+
+.mines-tile.is-mine .mines-tile__art {
+  width: 74%;
+  height: 74%;
+  filter: drop-shadow(0 0 12px rgba(224, 16, 47, 0.4));
+}
+
+/* --- a gem: a short gold bloom, then quiet ------------------------------ */
+.mines-tile__glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 246, 216, 0.6), rgba(232, 196, 106, 0.26) 44%, transparent 68%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mines-tile.is-gem.is-revealed .mines-tile__glow {
+  animation: mines-gem-bloom 640ms var(--ease-out) both;
+}
+
+@keyframes mines-gem-bloom {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  36% {
+    opacity: 0.92;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.3);
+  }
+}
+
+.mines-tile.is-gem .mines-tile__art {
+  animation: mines-gem-settle 640ms var(--ease-back) both;
+}
+
+@keyframes mines-gem-settle {
+  0% {
+    opacity: 0.4;
+    transform: scale(0.72);
+  }
+
+  58% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* --- a mine: one dark-red shockwave, and a rim that stays ---------------- */
+.mines-tile__shock {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(224, 16, 47, 0) 46%,
+    rgba(224, 16, 47, 0.62) 62%,
+    rgba(224, 16, 47, 0) 76%
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mines-tile.is-mine.is-revealed .mines-tile__shock {
+  animation: mines-mine-shock 560ms var(--ease-out) both;
+}
+
+@keyframes mines-mine-shock {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+}
+
+/*
+ * A second, slower ring behind the first. The shock layer is a ring growing
+ * outward from inside the tile; this one is drawn on the tile itself, which does
+ * not clip (`.mines-tile` is `overflow: visible` on purpose), so the wave can
+ * pass the tile's own edge and read as a real pressure wave.
+ */
+.mines-tile.is-mine.is-revealed::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  border: 1px solid rgba(224, 16, 47, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  animation: mines-mine-ring 700ms var(--ease-out) 140ms both;
+}
+
+@keyframes mines-mine-ring {
+  0% {
+    opacity: 0.85;
+    transform: scale(0.92);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.42);
+  }
+}
+
+/*
+ * The tile the player actually opened keeps a red ring after the wave passes —
+ * and then breathes, slowly, so the board is not completely still while the
+ * overlay is up. One tile, 2.6 s per breath, box-shadow only.
+ */
+/* The ring is declared on the tile as well as in the keyframes: with reduced
+   motion the animation is switched off, and the mark of the tile that ended the
+   round has to survive that. */
+.mines-tile.is-mine.is-hit {
+  box-shadow: 0 0 0 2px rgba(224, 16, 47, 0.58), 0 0 22px -4px rgba(224, 16, 47, 0.6);
+  animation: mines-ember 2.6s var(--ease-soft) infinite;
+}
+
+@keyframes mines-ember {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px rgba(224, 16, 47, 0.58), 0 0 22px -4px rgba(224, 16, 47, 0.6);
+  }
+
+  50% {
+    box-shadow: 0 0 0 2px rgba(224, 16, 47, 0.8), 0 0 34px -2px rgba(224, 16, 47, 0.85);
+  }
+}
+
+.mines-tile.is-gem.is-revealed {
+  box-shadow: 0 0 0 1px rgba(232, 196, 106, 0.3), 0 0 22px -6px rgba(232, 196, 106, 0.55);
+}
+
+/*
+ * The cash-out ripple. On a win the bloom the gem already owns is re-run across
+ * the tiles the player lit, in reading order, one `--mines-ripple-step` apart —
+ * so the gold runs over the board instead of the whole grid flashing at once.
+ * Reusing `mines-gem-bloom` rather than writing a second set of keyframes is
+ * deliberate: there is one description of what a gem's light looks like.
+ */
+.mines-stage.is-win .mines-tile.is-gem.is-revealed .mines-tile__glow {
+  animation: mines-gem-bloom 620ms var(--ease-out) both;
+  animation-delay: calc(var(--mines-order, 0) * var(--mines-ripple-step, 38ms));
+}
+
+/* A big cash out pulses twice; a normal one washes over the board once. */
+.mines-stage.is-win.is-big .mines-tile.is-gem.is-revealed .mines-tile__glow {
+  animation-iteration-count: 2;
+}
+
+/* --- the rising +x / +value ribbon -------------------------------------- */
+/*
+ * Deliberately a child of the TILE rather than of the turning inner: it must
+ * rise straight up the screen, not rotate away with the face it came from.
+ *
+ * It is a chip rather than loose text — a dark plate with a gold hairline behind
+ * the two lines, so a ribbon crossing a lit gem tile still reads. The plate is a
+ * `::before` and sits behind the text inside the float's own stacking context;
+ * the numbers themselves carry a hard dark ring so they hold their edge against
+ * both the dark plate and the gold tile underneath.
+ */
+.mines-float {
+  position: absolute;
+  bottom: 62%;
+  left: 50%;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 3px 8px;
+  font-size: clamp(0.66rem, 1.7vw, 0.86rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--gold-200);
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.95),
+    0 0 6px rgba(0, 0, 0, 0.9),
+    0 2px 8px rgba(0, 0, 0, 0.95);
+  pointer-events: none;
+  animation: mines-float-rise 1.1s var(--ease-out) forwards;
+}
+
+.mines-float::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(10, 9, 16, 0.9), rgba(6, 5, 10, 0.94));
+  border: 1px solid rgba(232, 196, 106, 0.34);
+  border-radius: var(--r-pill);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 246, 216, 0.14),
+    0 8px 18px -10px rgba(0, 0, 0, 0.95);
+}
+
+.mines-float__mult {
+  font-size: 1.04em;
+  color: var(--gold-100);
+}
+
+.mines-float__value {
+  font-size: 0.84em;
+  color: var(--win);
+}
+
+@keyframes mines-float-rise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 10px) scale(0.8);
+  }
+
+  16% {
+    opacity: 1;
+    transform: translate(-50%, -3px) scale(1.04);
+  }
+
+  28% {
+    transform: translate(-50%, -6px) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -42px) scale(1);
+  }
+}
+
+/* --- the two actions ---------------------------------------------------- */
+.mines-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-5);
+}
+
+.mines-actions .btn {
+  flex: 1 1 190px;
+}
+
+/*
+ * Cash out is the only gilded control in the app, and only while it is worth
+ * pressing: while it is inert it is grey and still, so the gold means "this is
+ * live" rather than "this is a button".
+ */
+.btn--cashout {
+  color: #2c1d02;
+  background: linear-gradient(180deg, var(--gold-300), var(--gold-500) 58%, var(--gold-600));
+  border: 1px solid rgba(255, 246, 216, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    0 12px 30px -18px rgba(0, 0, 0, 0.95);
+}
+
+/*
+ * Armed. The button it is worth pressing: it breathes, the gold rim brightens,
+ * and the sheen the shared `.btn::after` already owns is swept across it on a
+ * loop rather than only on hover — so the one control that banks the round keeps
+ * catching the light while the player is still deciding.
+ */
+.btn--cashout.is-armed {
+  border-color: rgba(255, 246, 216, 0.78);
+  animation: cashout-pulse 1.7s ease-in-out infinite;
+}
+
+.btn--cashout.is-armed::after {
+  opacity: 1;
+  animation: sheen 2.1s var(--ease-out) 0.5s infinite;
+}
+
+.btn--cashout:disabled {
+  color: var(--text-low);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border-color: var(--line-soft);
+  box-shadow: none;
+  animation: none;
+  opacity: 0.7;
+}
+
+@keyframes cashout-pulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.65),
+      0 0 20px rgba(232, 196, 106, 0.34);
+  }
+
+  50% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.75),
+      0 0 40px rgba(232, 196, 106, 0.6),
+      0 0 80px rgba(232, 196, 106, 0.22);
+  }
+}
+
+/* --- the read-outs ------------------------------------------------------ */
+/*
+ * The panel is a machine plate with a gold-ruled heading, and each reading is
+ * its own recessed cell rather than a line of text with a rule under it. The
+ * cells are laid out two to a row with the last one — what the player can
+ * actually take out — spanning the full width at roughly twice the type size,
+ * so the hierarchy is legible at a glance while a round is running: label,
+ * small value, and then the money.
+ */
+.mines-panel {
+  position: relative;
+  padding: var(--sp-5);
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(232, 196, 106, 0.06), transparent 58%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(0, 0, 0, 0.22));
+  border: 1px solid var(--line-soft);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 246, 216, 0.05),
+    var(--shadow-card);
+}
+
+.mines-panel .paytable__title {
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.mines-hud {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.mines-readout {
+  display: grid;
+  gap: 2px;
+  padding: var(--sp-3);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(0, 0, 0, 0.3));
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -10px 18px -14px rgba(0, 0, 0, 0.95);
+}
+
+/* The payout is the hero of the panel, and the only cell that spans it. */
+.mines-readout:last-child {
+  grid-column: 1 / -1;
+  background: linear-gradient(180deg, rgba(255, 246, 216, 0.06), rgba(0, 0, 0, 0.34));
+  border-color: rgba(232, 196, 106, 0.22);
+}
+
+.mines-readout__label {
+  font-size: 0.63rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.mines-readout__value {
+  font-size: 1.06rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+  color: var(--text-hi);
+}
+
+.mines-readout__value--mult {
+  color: var(--gold-200);
+}
+
+/* The one number the round is being played for, at hero size. */
+.mines-readout__value--payout {
+  font-size: clamp(1.5rem, 3.6vw, 1.95rem);
+  letter-spacing: 0.01em;
+}
+
+.mines-readout__value.is-live {
+  color: var(--gold-100);
+  text-shadow: 0 0 20px rgba(232, 196, 106, 0.5);
+}
+
+.mines-readout__value--payout.is-live {
+  color: var(--win);
+  text-shadow: 0 0 22px rgba(61, 220, 132, 0.45);
+}
+
+/*
+ * The settings plate in the cabinet: the two selectors read as one console
+ * rather than as two loose groups, with the recess the tiles sit in above it.
+ */
+.cabinet--mines .controls {
+  padding: var(--sp-4);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.26));
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -12px 20px -18px rgba(0, 0, 0, 0.95);
+}
+
+/* --- reduced motion -----------------------------------------------------
+   The flip becomes an instant swap, the ribbons never appear, the sparks never
+   throw, the waves never cross the table and nothing breathes — the view reads
+   the same preference and drops its own timers to zero, so the two cannot
+   disagree about the pace. The hold-back during the end-of-round wave is a
+   static opacity and stays: it is a state, not motion. */
+@media (prefers-reduced-motion: reduce) {
+  .mines-tile__inner {
+    transition: none;
+  }
+
+  /* The view skips building the ribbons at all in this mode; this is the belt
+     to that pair of braces, so a stray one could never sit there frozen. */
+  .mines-float {
+    display: none;
+  }
+
+  .mines-tile__glow,
+  .mines-tile__shock,
+  .mines-tile__spark,
+  .mines-tile.is-mine.is-revealed::after,
+  .mines-tile.is-mine.is-hit,
+  .mines-stage::after,
+  .mines-tile:not(:disabled):hover .mines-tile__face--back::before {
+    animation: none;
+  }
+
+  .btn--cashout.is-armed {
+    animation: none;
+  }
+
+  .btn--cashout.is-armed::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* ==========================================================================
+   09  WHEEL OF FORTUNE
+   ========================================================================== */
+.game-layout--wheel {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+}
+
+.cabinet--wheel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.wheel-stage {
+  position: relative;
+  width: var(--wheel-size);
+  aspect-ratio: 1;
+  margin-top: var(--sp-6);
+  border-radius: 50%;
+  /* A deep seat behind the drum, so the ruby/gold face reads as recessed into
+     a dark cabinet rather than pasted on top of it. The drum is the only thing
+     that is meant to be bright: the well around it is dark, and the ambient
+     light falls off hard towards the frame. Deliberately a warm dark BROWN
+     rather than a neutral black — a cold black well is what makes a cabinet
+     read as a UI card instead of as a machine in a lit room. */
+  background:
+    radial-gradient(circle at 50% 44%, rgba(38, 26, 10, 0.94), rgba(12, 7, 2, 0.98) 70%),
+    /* The room's neon, caught in the bottom of the well and along its top lip.
+       Two very faint cool washes — 9 % and 5 % — so the cavity has the colour
+       temperature of a lit floor without the drum itself going cold. */
+    radial-gradient(72% 56% at 50% 108%, rgba(139, 92, 246, 0.09), transparent 70%),
+    radial-gradient(62% 46% at 50% -8%, rgba(57, 230, 208, 0.05), transparent 72%);
+  /* Layered rather than a single hairline. A flat `inset 0 0 0 1px` outline is
+     what made the well read as a UI card: it drew a neutral ring around a warm
+     cavity. These are the light sources a real cabinet has — the dark seat
+     where the frame meets the well, the amber bounce the rim throws back INTO
+     its own well, a crimson falloff under it, the deep inner shadow that seats
+     the drum, and one wide amber bloom spilling out past the frame. */
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.94),
+    inset 0 0 26px rgba(255, 183, 3, 0.12),
+    inset 0 0 68px rgba(217, 4, 41, 0.07),
+    inset 0 16px 52px rgba(0, 0, 0, 0.86),
+    /* The seat the drum drops into, deepened: a hard dark lip at the very
+       bottom of the cavity and one more pass of shadow under the frame. The
+       drum therefore reads as sunk into the table rather than laid on it. */
+    inset 0 -16px 40px rgba(0, 0, 0, 0.68),
+    inset 0 0 0 3px rgba(0, 0, 0, 0.5),
+    /* And the machine sits in a dark room rather than floating on a black
+       field: one deep contact shadow that seats it, and one dim warm pass of
+       its own light. Nothing else. The three-pass version that was here put
+       gold at 22 px, amber at 62 px and violet at 140 px — three hues at three
+       radii, each with its own edge — on top of two more rings in the layers
+       above. Five overlapping halos is not five times the atmosphere; it is a
+       glow that has lost its source.
+
+       A box-shadow is the right tool for what is left: a blurred copy of the
+       frame's own circle, so it is brightest at the metal and only ever falls
+       outward, with no radius at which it can brighten again. */
+    0 24px 70px rgba(0, 0, 0, 0.86),
+    0 0 34px rgba(255, 178, 60, 0.1);
+}
+
+/*
+ * The ambient aura — a second, wider pass of the SAME warm light.
+ *
+ * Same hue family and the same falling profile as the backdrop it sits over.
+ * That is the entire reason it still exists: two monotone washes sum to a
+ * monotone wash, so this adds reach and depth without adding an edge. As a
+ * brighter band at its own radius it would be the second ring, which is
+ * precisely what the recipe before this one was — a peak 0.02 of a wheel
+ * diameter outside the frame, with a 22 px drop-shadow bloom around it, next to
+ * another peak further out and a third in another hue. Three rings.
+ *
+ * Deliberately NOT the brightest layer. It peaks at 0.10 at the CENTRE, under
+ * the drum, so the only part of it ever visible is the dim tail a few per cent
+ * of radius outside the frame. The wheel is the bright object here; this is the
+ * wall behind it.
+ *
+ * STATIC, and it has to stay that way: an atmosphere that moves is an
+ * atmosphere that pulls the eye. Nothing on this machine animates except the
+ * bulb ring on the rim, which is a spinner, and the earned win states.
+ */
+.wheel-aura {
+  position: absolute;
+  inset: calc(var(--wheel-size) * -0.1);
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgba(255, 176, 48, 0.1) 0%,
+    rgba(255, 168, 44, 0.078) 30%,
+    rgba(242, 138, 36, 0.05) 48%,
+    rgba(216, 98, 28, 0.025) 62%,
+    rgba(170, 70, 22, 0.009) 68%,
+    transparent 70%
+  );
+}
+
+/* --- The room behind the wheel ------------------------------------------
+   ONE soft, static wash of warm light — the machine's own light falling on the
+   wall it stands against, and the only atmosphere layer there is.
+
+   The property that matters is that it is MONOTONE: every stop is dimmer than
+   the one inside it, from the centre all the way out to transparent. That one
+   property is what makes a glow read as depth rather than as a ring, and it is
+   what the versions before this one got wrong. Those carried several layers
+   whose peaks sat at different radii — a bright band at the frame, a second
+   one further out, a third in a different hue — and whatever the individual
+   alphas were, a profile that RISES again on its way out is, to the eye, a set
+   of glowing rings. Adding or dimming layers cannot fix that; only a falling
+   profile can. It is therefore a rule in the suite now (see `assertNoRing`)
+   rather than a matter of taste.
+
+   Warm, and warm only. The previous recipe ran amber → crimson → the page's
+   violet and teal: defensible as physics, but at this scale it read as colour
+   banding wrapped around a gold machine. One hue family, and the wheel is the
+   only thing in the frame that looks bright.
+
+   It reaches 0.70 of a wheel diameter out and peaks at 0.12 — at the CENTRE,
+   under an opaque drum — so the strongest part anyone actually sees is about
+   0.05, right at the frame. Essentially no glow, which is the point.
+
+   A plain `background` on a pseudo-element: no blur, no filter, no animation,
+   nothing per frame, and no way for it to end up on the bulbs' layer budget.
+   It sits below the drum (z-index 0 against the disc's 1), so the light is only
+   ever seen AROUND the wheel, the way a backdrop is. Its falloff reaches
+   `transparent` at 70 %, inside the 70.71 % at which a round element clips its
+   own `circle` gradient — otherwise the dim tail becomes a visible edge, which
+   is the fault this and `.wheel-aura` were both carrying. */
+.wheel-stage::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--wheel-size) * -0.2);
+  border-radius: 50%;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgba(255, 178, 46, 0.12) 0%,
+    rgba(255, 168, 40, 0.095) 28%,
+    rgba(240, 132, 32, 0.062) 44%,
+    rgba(214, 92, 26, 0.034) 57%,
+    rgba(150, 60, 20, 0.014) 65%,
+    transparent 70%
+  );
+}
+
+/* --- Where the neon ring went -------------------------------------------
+   There is no `.wheel-neon` layer any more, and no `neon-breathe` keyframes.
+
+   It was a ring peak standing off the frame at its own radius, on top of the
+   aura's own peak at a different radius, on top of a third coloured band in the
+   backdrop. Each was defensible read alone and every one of them was dimmed in
+   turn; together they were three concentric glowing rings around a wheel, which
+   is what they looked like no matter how low the alphas went. A glow is not
+   made tasteful by being made fainter — it is made tasteful by having ONE
+   profile that only ever falls.
+
+   So the atmosphere is two monotone washes of one hue (the backdrop and the
+   aura), and the moving part of this machine is the bulb ring on the rim, where
+   motion belongs on a slot machine. Removing the layer also removed the only
+   animated element in the background, which is why the reduced-motion sheet
+   below no longer has an entry for it. */
+
+/* --- The drum ----------------------------------------------------------- */
+.wheel-disc {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  /* No transform transition and no ambient glow, ever. The rotation is
+     integrated frame by frame by js/ui/wheelDisc.js — a transition here would
+     fight the loop and swallow the tick past the pin — and the drum's own depth
+     lighting lives in the face artwork, so a box-shadow would only be a second,
+     flatter copy of it.
+
+     `backface-visibility: hidden` is the other half of the compositor hint the
+     script writes beside the rotation (`translateZ(0)`): between them the
+     browser promotes the turned face once and transforms a texture for the
+     whole spin, instead of re-rasterising twelve wedge paths and their
+     gradients on every frame. That re-rasterisation is what reads as shimmer at
+     speed, and no amount of easing fixes it. */
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  z-index: 1;
+}
+
+.wheel-face-mount,
+.wheel-face {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* The face's own layers, built by buildWheelFace in js/ui/wheelDisc.js. The
+   three surface layers — the polished lip inside the rim, the throat where the
+   slices run under the knob, and the room's diagonal sheen — are decorative
+   light, so they are inert like everything else in the face. */
+.wheel-face__wedges,
+.wheel-face__seams,
+.wheel-face__lips,
+.wheel-face__throat,
+.wheel-face__sheen,
+.wheel-face__rim-light,
+.wheel-face__pegs,
+.wheel-face__depth,
+.wheel-face__gloss,
+.wheel-peg__shadow {
+  pointer-events: none;
+}
+
+.wheel-wedge {
+  /* Wedges meet at a sharp angle near the hub; this keeps the hairline
+     separation between them crisp instead of aliased. */
+  shape-rendering: geometricPrecision;
+}
+
+.wheel-seam {
+  /* The raised divider between two slices: a dark groove at the hub end and a
+     lit edge at the rim, from the radial gradient in the markup. */
+  shape-rendering: geometricPrecision;
+}
+
+/* The machined edges: one arc per slice on the outer band, drawn as thin strokes
+   around a 100-unit circle. Left at default rendering a hairline arc aliases
+   into a dotted line at phone sizes, which is the opposite of "machined". */
+.wheel-face__lip {
+  shape-rendering: geometricPrecision;
+}
+
+/* The recessed depth gradient and the glass gloss are painted into the face
+   itself (see buildWheelFace in js/ui/wheelDisc.js), so the disc needs no
+   overlay pseudo-element. */
+
+/* --- The winning wedge --------------------------------------------------- */
+/* A single lit wedge, positioned by the angle js/ui/wheelDisc.js writes. Painted
+   over the drum so it turns with it, and only ever shown for a paying stop. */
+.wheel-wedge-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity var(--dur-base) var(--ease-soft);
+  background: conic-gradient(
+    from calc(var(--win-angle, 0deg) - 15deg),
+    rgba(255, 214, 130, 0) 0deg,
+    rgba(255, 214, 130, 0.4) 11deg,
+    rgba(255, 232, 176, 0.16) 15deg,
+    rgba(255, 214, 130, 0.4) 19deg,
+    rgba(255, 214, 130, 0) 30deg
+  );
+}
+
+.wheel-wedge-glow.is-visible {
+  opacity: 1;
+  animation: wedge-pulse 1.15s var(--ease-soft) infinite;
+}
+
+/* --- Static chrome: rim, bulbs, pin ------------------------------------- */
+.wheel-rim {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+  /* A heavier lift than before, plus one warm pass so the brass edge catches the
+     room the way the neon ring does. The frame is the brightest piece of metal
+     on the machine and it should cast a shadow that says so. */
+  filter: drop-shadow(0 14px 30px rgba(0, 0, 0, 0.86)) drop-shadow(0 0 16px rgba(255, 180, 40, 0.22));
+}
+
+/* The frame's concentric rings, painted by index.html. The well is the strong
+   inner shadow that seats the drum inside the frame; the bevel, the groove and
+   the rail are what make the frame four separate turned rings rather than one
+   outline. */
+.wheel-rim__bevel,
+.wheel-rim__groove,
+.wheel-rim__rail,
+.wheel-rim__well,
+.wheel-rim__neon,
+.wheel-rim__neon-halo {
+  shape-rendering: geometricPrecision;
+}
+
+/* The neon filament on the frame's outer edge. Static on purpose: the rim
+   carries a `filter` for its own depth shadow, and animating anything inside a
+   filtered subtree re-rasterises that filter every frame. It is light, not
+   motion — the marquee on the band is the only thing here that moves. */
+
+/* --- Rim lamps -----------------------------------------------------------
+   One drilled socket per bulb, and inside it two layers: a hot core and the
+   halo that spills onto the brass. opacity and transform are the entire
+   choreography, and there is deliberately no `filter`, no `box-shadow` and no
+   layout property anywhere in this subtree — a filter or a shadow on an
+   animating element forces the engine to re-rasterise it every single frame
+   (24 times over, here), which is exactly how a bulb sequence ends up looking
+   frozen. With only opacity and transform moving, the ring is composited and
+   blinks at display rate.
+
+   A lamp's brightness arrives as `--lamp-lit` (0…1), written onto the socket
+   by js/ui/wheelDisc.js. Both layers read it by inheritance, so one write
+   lights the bulb and its spill together. There is no animation here during
+   the spin at all: the chase IS the rotation.
+   ------------------------------------------------------------------------- */
+.wheel-lamps {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.wheel-lamp {
+  position: absolute;
+  width: var(--wheel-lamp-size);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  /* The drilled recess the bulb is set into: dark, with a lit lip on top. */
+  background: radial-gradient(circle at 50% 38%, #2b1e08, #0f0a02 72%);
+  box-shadow:
+    inset 0 -1px 2px rgba(0, 0, 0, 0.85),
+    inset 0 1px 1px rgba(255, 240, 205, 0.2),
+    0 0 0 0.5px rgba(0, 0, 0, 0.55);
+  /* Static placement: the socket sits where the markup put it and never moves,
+     so the transform on the layers inside it is the only thing that changes
+     per frame. */
+  transform: translate(-50%, -50%);
+}
+
+/* The halo: the light the bulb throws onto the brass around it. Deliberately
+   wider than the socket, so a run of lit lamps merges into one unbroken ring
+   of light instead of a row of dots.
+
+   `--lamp-lit` is the bulb's RESTING brightness at the bottom of its range and
+   a full flare at the top — never zero, because a marquee bulb is on whenever
+   the machine is. js/ui/wheelDisc.js writes each lamp's own resting level, so
+   the ring holds a warm, slightly uneven glow between spins, and the chase the
+   head produces rides on top of it. The bottom of the range is therefore still
+   plainly visible, and the top is 2× brighter and a third larger again: that
+   ratio is what makes the travelling head read. */
+.wheel-lamp__glow {
+  position: absolute;
+  inset: -82%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 46%,
+    #fffdf6 0%,
+    #fff3cd 16%,
+    rgba(255, 226, 148, 0.92) 30%,
+    rgba(255, 186, 66, 0.42) 52%,
+    rgba(255, 160, 26, 0.14) 68%,
+    rgba(255, 150, 20, 0) 80%
+  );
+  opacity: calc(0.3 + var(--lamp-lit, 0) * 0.7);
+  transform: scale(calc(0.86 + var(--lamp-lit, 0) * 0.42));
+}
+
+/* The bulb itself: a small, hot, white-gold core inside the halo. It keeps a
+   floor bright enough that the filament is visibly alight in the resting ring
+   — a row of bulbs at rest is a ring of LIGHT, not a ring of dark sockets. */
+.wheel-lamp__core {
+  position: absolute;
+  inset: 26%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 44% 34%,
+    #fffefb 0%,
+    #fff6da 38%,
+    #ffd77a 74%,
+    #f0a83a 100%
+  );
+  opacity: calc(var(--lamp-lit, 0) * 0.72 + 0.24);
+  transform: scale(calc(0.6 + var(--lamp-lit, 0) * 0.5));
+}
+
+/* The SPIN's marquee is script-driven: js/ui/wheelDisc.js integrates a band
+   angle off the drum's own speed and writes `--lamp-lit` on every socket, so
+   during a spin the stylesheet may not animate the ring at all — a keyframe
+   here would fight the loop and stutter. It is only allowed to promise the two
+   properties it moves. */
+.wheel-stage.is-chasing .wheel-lamp__glow,
+.wheel-stage.is-chasing .wheel-lamp__core {
+  will-change: opacity, transform;
+}
+
+/* THE RESULT STROBE — svetomuzika, locked on.
+
+   A hard square wave: `steps(1, end)` means each bulb is ON or OFF and never in
+   between, which is what a contactor switching a row of 24 lamps actually looks
+   like, and it is the difference between a strobe and a fade. The ring's two
+   halves run on OPPOSITE phases — the odd bulbs lit while the even ones are out,
+   then they swap, a little over twice a second — so the whole ring flashes
+   against itself rather than flashing together.
+
+   The parity comes from `data-lamp-parity`, written by the view when it builds
+   the sockets, so the stylesheet cannot disagree with the order they were
+   appended in (and `:nth-child(odd)` would be the same thing only as long as
+   nothing ever inserts a lamp — which is exactly the kind of assumption the
+   contract test cannot check). The cadence is written from WHEEL_FRAME. */
+.wheel-stage.is-win .wheel-lamp__glow,
+.wheel-stage.is-win .wheel-lamp__core {
+  will-change: opacity, transform;
+  animation: lamp-strobe var(--lamp-strobe, 420ms) steps(1, end) infinite;
+}
+
+/* Half a cycle behind: `0ms - …` rather than `… * -1`, the same negative offset
+   with no unary minus token for an engine to argue about. */
+.wheel-stage.is-win .wheel-lamp[data-lamp-parity='odd'] .wheel-lamp__glow,
+.wheel-stage.is-win .wheel-lamp[data-lamp-parity='odd'] .wheel-lamp__core {
+  animation-delay: calc(0ms - var(--lamp-strobe, 420ms) / 2);
+}
+
+/* …and the top tier runs the identical strobe at a quicker cadence, so the ring
+   visibly steps up a gear between "exciting" and "spectacular". */
+.wheel-stage.is-jackpot .wheel-lamp__glow,
+.wheel-stage.is-jackpot .wheel-lamp__core {
+  animation-duration: var(--lamp-strobe-fast, 220ms);
+}
+
+.wheel-stage.is-jackpot .wheel-lamp[data-lamp-parity='odd'] .wheel-lamp__glow,
+.wheel-stage.is-jackpot .wheel-lamp[data-lamp-parity='odd'] .wheel-lamp__core {
+  animation-delay: calc(0ms - var(--lamp-strobe-fast, 220ms) / 2);
+}
+
+/* --- The light the frame throws back ------------------------------------- */
+/* A gold spill around the whole cabinet, only while a paying result stands. It
+   is a box-shadow on a pseudo-element rather than a blur anywhere, so nothing
+   animates a filter and the stage keeps its own layer. */
+.wheel-stage::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--wheel-size) * -0.018);
+  border-radius: 50%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-soft);
+  box-shadow:
+    0 0 calc(var(--wheel-size) * 0.08) rgba(255, 208, 118, 0.5),
+    0 0 calc(var(--wheel-size) * 0.2) rgba(255, 178, 56, 0.26);
+}
+
+.wheel-stage.is-win::after {
+  opacity: 1;
+}
+
+.wheel-stage.is-jackpot::after {
+  opacity: 1;
+  animation: win-spill 900ms var(--ease-soft) infinite alternate;
+}
+
+.wheel-pointer {
+  position: absolute;
+  /* The pin hangs from the cabinet above the rim and its tip ends on the peg
+     ring, exactly where a peg can flick it. */
+  top: calc(var(--wheel-size) * -0.064);
+  left: 50%;
+  width: calc(var(--wheel-size) * 0.104);
+  z-index: 4;
+  transform-origin: 50% 22%;
+  /* The tip flicks as each rim peg sweeps under it. `--wheel-pin-flick` is a
+     0…1 number written every frame by js/ui/wheelDisc.js; the degrees it is
+     worth come from WHEEL_SPIN.pinFlickDeg. */
+  transform:
+    translateX(-50%)
+    rotate(calc(var(--wheel-pin-flick, 0) * var(--wheel-pin-flick-deg)));
+  /* Layered: the arrow's cast shadow on the drum, a warm kiss under its tip so
+     it reads as metal standing off the face rather than a flat sticker, and one
+     tight dark pass to keep its silhouette against a lit wedge. The transform
+     is driven per frame, and a transform is applied to the finished filter
+     result, so the shadows are rasterised once and then moved. */
+  filter:
+    drop-shadow(0 10px 16px rgba(0, 0, 0, 0.9))
+    drop-shadow(0 1px 1px rgba(255, 246, 214, 0.4))
+    drop-shadow(0 0 12px rgba(255, 180, 40, 0.3))
+    drop-shadow(0 0 3px rgba(0, 0, 0, 0.7));
+  will-change: transform;
+}
+
+.wheel-pointer__art {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* --- Polished brass knob ------------------------------------------------ */
+/* No lettering: a machined centrepiece — a turned collar, a domed face and a
+   recessed boss. Four things make it read as a turned piece of metal rather
+   than a gold disc: the conic sweep (the brushing), a `repeating-conic-gradient`
+   on top of it (the fine grain the tool leaves), six concentric insets (the
+   steps of a turned collar, each with its own lit and shadowed edge) and a
+   domed highlight lit from the upper left. */
+.wheel-hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  /* 32% keeps the knob inside the wedges' first VISIBLE band (see
+     WEDGE_RAMP_OFFSETS in js/ui/wheelDisc.js) — the ramp's base stop is
+     deliberately hidden under it, and a test keeps the two in step. */
+  width: 32%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  z-index: 5;
+  background:
+    repeating-conic-gradient(
+      from 200deg,
+      rgba(255, 246, 214, 0.07) 0 0.8deg,
+      rgba(0, 0, 0, 0.06) 0.8deg 1.6deg
+    ),
+    conic-gradient(
+      from 200deg,
+      #3d2a05,
+      #d9a93a 10%,
+      #fffbe8 20%,
+      #9a6a12 32%,
+      #2e1f03 46%,
+      #8a5c0c 58%,
+      #fff2c4 70%,
+      #b8842a 84%,
+      #3d2a05 100%
+    );
+  /* The steps of a turned collar, inside out: a lit outer hairline, the
+     shadowed step, its lit top edge, a second finer step, then the recess the
+     domed face sits down in. */
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 249, 226, 0.62),
+    inset 0 0 0 4px rgba(0, 0, 0, 0.48),
+    inset 0 0 0 5px rgba(255, 236, 184, 0.4),
+    inset 0 0 0 9px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 10px rgba(255, 236, 184, 0.18),
+    inset 0 0 30px rgba(0, 0, 0, 0.7),
+    inset 0 -9px 20px rgba(0, 0, 0, 0.72),
+    0 16px 38px rgba(0, 0, 0, 0.92),
+    0 0 32px rgba(255, 214, 130, 0.26);
+}
+
+/* The domed face of the knob, lit from the upper left. */
+.wheel-hub::before {
+  content: '';
+  position: absolute;
+  inset: 13%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 36% 28%,
+    #fffef8 0%,
+    #ffe9a4 20%,
+    #d0a02c 50%,
+    #7a5a12 80%,
+    #2e1f05 100%
+  );
+  box-shadow:
+    inset 0 4px 10px rgba(255, 253, 240, 0.7),
+    inset 0 -7px 16px rgba(0, 0, 0, 0.72);
+}
+
+/* The recessed centre boss. */
+.wheel-hub::after {
+  content: '';
+  position: absolute;
+  inset: 36%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 32%, #fff8e2, #c9a24a 44%, #7a5a18 100%);
+  box-shadow:
+    inset 0 -3px 6px rgba(0, 0, 0, 0.55),
+    inset 0 2px 4px rgba(255, 250, 232, 0.55),
+    0 0 14px rgba(232, 196, 106, 0.4);
+}
+
+/* --- Segment labels ----------------------------------------------------- */
+/* Positioned by js/ui/wheelDisc.js: each label is centred at radius 32% of the
+   wheel and rotated so its text reads from the hub outwards. Drawn above the
+   face and below the knob, at the strongest contrast the palette allows — the
+   multiplier has to stay readable while the drum is turning. */
+.wheel-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 3;
+  font-family: var(--font-display);
+  /* Bigger than it looks: the digit has to survive being 3 px tall on a phone
+     AND being read while the drum is turning, so the floor is raised and the
+     ceiling lifted with it. Tabular figures keep ×1.2 and ×10 the same width,
+     so no label is wider than the widest. */
+  font-size: clamp(0.66rem, 2.1vw, 0.95rem);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  color: #fffaf0;
+  /*
+   * A dark RING, not a soft blur — and that is the whole fix.
+   *
+   * The wheel alternates deep ruby and pale gold, but the label used to rely on
+   * one soft shadow, near-white text on a near-white gold slice: ×1.2 sat on
+   * the light half of the drum at roughly no contrast at all. Four hard shadows
+   * in the cardinal directions plus the diagonals close an outline around the
+   * glyph that reads on gold, on ruby, and on the seam lines between them, and
+   * the requested `0 2px 4px` drop layer gives it the lift off the surface.
+   */
+  /*
+   * The ring lives in a custom property so that the states BELOW can add their
+   * own glow without throwing it away. `text-shadow` is one property: a state
+   * that re-declares it replaces the whole list, and the obvious way to write
+   * the jackpot rule would quietly have left the most important number on the
+   * wheel as the only one with no outline at all.
+   */
+  --label-ring:
+    0 0 1px rgba(0, 0, 0, 0.98),
+    1px 0 1px rgba(0, 0, 0, 0.95),
+    -1px 0 1px rgba(0, 0, 0, 0.95),
+    0 1px 1px rgba(0, 0, 0, 0.95),
+    0 -1px 1px rgba(0, 0, 0, 0.95),
+    1px 1px 1px rgba(0, 0, 0, 0.9),
+    -1px 1px 1px rgba(0, 0, 0, 0.9),
+    0 2px 4px rgba(0, 0, 0, 0.9);
+  text-shadow: var(--label-ring);
+  pointer-events: none;
+  transition: color var(--dur-base) var(--ease-soft), text-shadow var(--dur-base) var(--ease-soft);
+}
+
+.wheel-label--blank {
+  color: var(--text-low);
+}
+
+/* The top tier reads as an engraving: warm ink with a gold halo, over the
+   same outline as every other number so it is never the least legible one. */
+.wheel-label--top {
+  color: #fffdf2;
+  text-shadow: var(--label-ring), 0 0 12px rgba(232, 196, 106, 0.85);
+}
+
+.wheel-label.is-win {
+  color: #fff8e4;
+  text-shadow: var(--label-ring), 0 0 16px rgba(232, 196, 106, 0.95);
+  animation: label-flash 0.6s var(--ease-out) both;
+}
+
+/* Where the pointer stopped when the segment did not pay. */
+.wheel-label.is-lost {
+  color: var(--text-mid);
+  text-shadow: var(--label-ring);
+}
+
+/* --- Disc states -------------------------------------------------------- */
+/* A turning drum gets no light of its own: the rim's chase is all a spin is
+   allowed to spend, and the cabinet stays dark until a stop pays. */
+.wheel-disc.is-spinning {
+  cursor: progress;
+}
+
+.wheel-disc.is-win {
+  box-shadow:
+    0 0 0 2px rgba(232, 196, 106, 0.4),
+    var(--glow-gold-lg);
+}
+
+.cabinet.is-locked .wheel-stage {
+  cursor: progress;
+}
+
+/* Legend — one row per multiplier: value · flavour · real odds. A single
+   column keeps the odds readable at every width (see wheelLegend()). */
+.legend__list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.legend__item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-sm);
+  transition: transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-soft);
+}
+
+.legend__item:hover {
+  transform: translateY(-2px);
+  border-color: var(--line-strong);
+}
+
+.legend__mult {
+  min-width: 44px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--gold-200);
+}
+
+.legend__mult--zero {
+  color: var(--text-low);
+}
+
+.legend__mult--jackpot {
+  color: var(--neon-pink);
+  text-shadow: 0 0 14px rgba(255, 77, 157, 0.5);
+}
+
+.legend__note {
+  font-size: 0.72rem;
+  color: var(--text-low);
+}
+
+/* Real odds of the segment (the wheel is weighted, not equal-area). */
+.legend__odds {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text-mid);
+}
+
+.legend__foot {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  font-size: 0.72rem;
+  color: var(--text-low);
+  border-top: 1px solid var(--line-soft);
+}
+
+/* ==========================================================================
+   10  HISTORY & EMPTY STATES
+   ========================================================================== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-7) var(--sp-5);
+  text-align: center;
+  border: 1px dashed var(--line-soft);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.empty-state[hidden] {
+  display: none;
+}
+
+.empty-state__icon {
+  font-size: 2.2rem;
+  opacity: 0.85;
+}
+
+.empty-state__title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: var(--gold-200);
+}
+
+.empty-state__text {
+  max-width: 46ch;
+  font-size: 0.9rem;
+  color: var(--text-mid);
+}
+
+/* ==========================================================================
+   11  OVERLAY ROOTS
+   ========================================================================== */
+.toast-root {
+  position: fixed;
+  top: calc(var(--header-h) + var(--sp-3));
+  right: var(--sp-5);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  pointer-events: none;
+}
+
+.modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+}
+
+.modal-root[hidden] {
+  display: none;
+}
+
+/* --- Result modal (win / loss overlay) --------------------------------- */
+.result-modal {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-4);
+}
+
+.result-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(70% 60% at 50% 38%, rgba(232, 196, 106, 0.12), transparent 70%),
+    rgba(4, 4, 8, 0.8);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-soft);
+  cursor: pointer;
+}
+
+.result-modal.is-open .result-modal__backdrop {
+  opacity: 1;
+}
+
+.result-modal__panel {
+  position: relative;
+  width: min(460px, 100%);
+  /* Short (landscape-phone) viewports: the panel scrolls inside itself instead
+     of overflowing the centred grid, which would clip the title at the top and
+     the "Yopish" button at the bottom. `100dvh` keeps mobile browser chrome
+     from stealing a slice of the overlay. */
+  max-height: calc(100vh - 2 * var(--sp-4));
+  max-height: calc(100dvh - 2 * var(--sp-4));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-6) var(--sp-5) var(--sp-5);
+  text-align: center;
+  background: linear-gradient(180deg, rgba(24, 22, 32, 0.98), rgba(9, 9, 14, 0.99));
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-card), var(--glow-gold-md);
+  opacity: 0;
+  transform: translateY(20px) scale(0.94);
+  transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-slow) var(--ease-back);
+}
+
+.result-modal.is-open .result-modal__panel {
+  opacity: 1;
+  transform: none;
+}
+
+.result-modal.is-lose .result-modal__panel {
+  border-color: var(--line-soft);
+  box-shadow: var(--shadow-card);
+}
+
+.result-modal.is-jackpot .result-modal__panel {
+  border-color: rgba(255, 77, 157, 0.55);
+  box-shadow: var(--shadow-card), 0 0 56px rgba(255, 77, 157, 0.32);
+}
+
+.result-modal__icon {
+  font-size: 2.6rem;
+  line-height: 1;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.7));
+}
+
+.result-modal__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 4.5vw, 1.85rem);
+  letter-spacing: 0.02em;
+  background: linear-gradient(120deg, var(--gold-100), var(--gold-400) 55%, var(--gold-600));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.result-modal.is-lose .result-modal__title {
+  background: none;
+  color: var(--text-mid);
+  -webkit-text-fill-color: currentColor;
+}
+
+.result-modal.is-jackpot .result-modal__title {
+  background: linear-gradient(120deg, #ffe9f4, var(--neon-pink) 55%, #8b5cf6);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.result-modal__message {
+  font-size: 0.95rem;
+  color: var(--text-mid);
+}
+
+.result-modal__amount {
+  font-size: clamp(1.6rem, 6vw, 2.35rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.result-modal__amount.is-win {
+  color: var(--gold-200);
+  text-shadow: 0 0 26px rgba(232, 196, 106, 0.45);
+}
+
+.result-modal__amount.is-lose {
+  color: var(--text-mid);
+}
+
+.result-modal__facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-3);
+  width: 100%;
+  margin-top: var(--sp-2);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--line-soft);
+}
+
+.result-modal__fact dt {
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.result-modal__fact dd {
+  margin-top: 2px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-hi);
+}
+
+.result-modal__balance {
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-low);
+}
+
+.result-modal__actions {
+  display: flex;
+  gap: var(--sp-3);
+  width: 100%;
+  margin-top: var(--sp-2);
+}
+
+.result-modal__actions .btn {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-modal__disclaimer {
+  max-width: 36ch;
+  font-size: 0.68rem;
+  color: var(--text-low);
+}
+
+/* ==========================================================================
+   12  GAME FEEDBACK (reels, balance, history rows, toasts, confetti)
+   ========================================================================== */
+
+/* --- Reel states ---------------------------------------------------------
+   The motion itself is numeric — js/ui/reelView.js writes the strip offset every
+   frame and nothing else, so the symbols never lose a pixel of sharpness. These
+   phase classes describe the beat the drum is in, and give the housing something
+   to react to: the drum's inner light lifts as it spins up, stays bright at full
+   speed and settles back down as it brakes. */
+.reel.is-spinning {
+  --reel-drum-light: 0.14;
+}
+
+.reel.is-peak {
+  --reel-drum-light: 0.22;
+}
+
+.reel.is-braking {
+  --reel-drum-light: 0.12;
+}
+
+.reel.is-landing {
+  --reel-drum-light: 0.07;
+}
+
+/* The housing takes the stop: a couple of pixels of give that settles back to
+   zero as the strip's own overshoot-and-rebound plays out. `--reel-lock-ms` is
+   the same landing beat the JS schedules, so the two can never disagree. The
+   mechanical give is part of the physics, so it runs on every lock, paying or
+   not. */
+.reel.is-locking {
+  animation: reel-snap var(--reel-lock-ms) linear both;
+}
+
+/* The light is the win cue, not the stop. `.is-paying` comes from the result the
+   engine decided before the first frame, so on a losing turn the drums snap into
+   place with no flash and no gold on the housing at all. */
+.reel-window.is-paying .reel.is-locking {
+  border-color: rgba(232, 196, 106, 0.3);
+}
+
+.reel-window.is-paying .reel.is-locking::after {
+  animation: reel-flash var(--reel-lock-ms) var(--ease-out) both;
+}
+
+.reel-window.is-spinning {
+  box-shadow: var(--reel-window-shadow), var(--glow-gold-sm);
+}
+
+/* --- Celebration lighting ------------------------------------------------
+   Everything below is conditional on the spin having paid. A losing stop runs
+   none of it: the drums settle, the light stays off, and the cabinet keeps the
+   dim, high-contrast look it has at rest. */
+/* The cabinet's neon pulse. A burst of breaths rather than an endless one, and
+   deliberately without a fill mode: once the four breaths are done the frame
+   hands itself back to whichever tier's static glow is declared below, so the
+   top tier keeps its brighter halo instead of being pulled down to the base
+   one. It never animates while the player is idle on the result, either. */
+.reel-window.is-win {
+  border-color: var(--line-strong);
+  box-shadow: var(--reel-window-shadow), var(--glow-gold-md);
+  animation: win-cabinet 1.6s var(--ease-soft) 4 alternate;
+}
+
+/* The winning light: one band of light travels across the glass. */
+.reel-window.is-win .reel-window__lights {
+  opacity: 1;
+}
+
+.reel-window.is-win .reel-window__lights::before {
+  animation: lights-sweep 1.4s var(--ease-soft) 1 both;
+}
+
+/* The winning cells pop once, then breathe: a golden light stroke tightens and
+   loosens around each symbol (win-ring, box-shadow), the halo swells with it
+   (win-glow, filter) and the pop is already done (win-pop, transform). Three
+   animations, three different properties, so none of them fight. */
+.reel-symbol.is-win {
+  border-radius: var(--r-md);
+  background: radial-gradient(closest-side, rgba(232, 196, 106, 0.26), transparent 78%);
+  /* The value used before the animations' 560ms delay elapses. */
+  box-shadow:
+    0 0 0 2px rgba(255, 246, 216, 0.85),
+    0 0 18px rgba(232, 196, 106, 0.6);
+  filter: drop-shadow(0 0 18px rgba(232, 196, 106, 0.8));
+  animation:
+    win-pop 560ms var(--ease-back) both,
+    win-glow 1.5s var(--ease-soft) 560ms infinite alternate,
+    win-ring 1.25s var(--ease-soft) 560ms infinite;
+}
+
+/* A significant win keeps the bloom going after the sweep has passed. */
+.reel-window.is-big-win {
+  box-shadow: var(--reel-window-shadow), var(--glow-gold-lg);
+}
+
+.reel-window.is-big-win .reel-window__lights {
+  animation: lights-bloom 1.35s var(--ease-soft) 1.2s infinite alternate;
+}
+
+/* The top tier: two sweeps, a tighter bloom, a brighter frame. */
+.reel-window.is-jackpot {
+  border-color: var(--gold-200);
+  box-shadow: var(--reel-window-shadow), var(--glow-gold-lg), 0 0 90px rgba(232, 196, 106, 0.24);
+}
+
+.reel-window.is-jackpot .reel-window__lights {
+  animation: lights-bloom 0.9s var(--ease-soft) 2.2s infinite alternate;
+}
+
+.reel-window.is-jackpot .reel-window__lights::before {
+  animation: lights-sweep 1.15s var(--ease-soft) 2 both;
+}
+
+.cabinet.is-locked .reel-window {
+  cursor: progress;
+}
+
+/* --- Result message ----------------------------------------------------- */
+.reel-summary.is-win {
+  color: var(--gold-200);
+  font-weight: 600;
+  text-shadow: 0 0 20px rgba(232, 196, 106, 0.45);
+  animation: win-pop 0.6s var(--ease-back) both;
+}
+
+.reel-summary.is-lose {
+  color: var(--text-mid);
+}
+
+/* --- Bet hint ----------------------------------------------------------- */
+.bet-hint {
+  max-width: 34ch;
+  font-size: 0.78rem;
+  color: var(--lose);
+}
+
+.bet-hint[hidden] {
+  display: none;
+}
+
+/* --- Balance chip flash ------------------------------------------------- */
+.balance-chip.is-win {
+  border-color: rgba(61, 220, 132, 0.55);
+  box-shadow: 0 0 26px rgba(61, 220, 132, 0.35), var(--inset-highlight);
+}
+
+.balance-chip.is-lose {
+  border-color: rgba(255, 90, 95, 0.45);
+  box-shadow: 0 0 22px rgba(255, 90, 95, 0.28), var(--inset-highlight);
+}
+
+.balance-chip.is-win .balance-chip__value {
+  color: var(--win);
+}
+
+.balance-chip.is-lose .balance-chip__value {
+  color: var(--lose);
+}
+
+/* --- History list ------------------------------------------------------- */
+.history-card {
+  padding: var(--sp-5);
+}
+
+.history-summary {
+  min-height: 1.2em;
+  margin-bottom: var(--sp-3);
+  font-size: 0.8rem;
+  color: var(--text-low);
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.history-list:empty {
+  display: none;
+}
+
+.history-row {
+  display: grid;
+  grid-template-columns: 28px 84px minmax(90px, 1fr) minmax(120px, 1fr) auto auto auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-3);
+  font-size: 0.86rem;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  transition: background var(--dur-base) var(--ease-soft), border-color var(--dur-base) var(--ease-soft);
+}
+
+.history-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--line-soft);
+}
+
+.history-row--win {
+  border-left: 2px solid rgba(61, 220, 132, 0.6);
+}
+
+.history-row--loss {
+  border-left: 2px solid rgba(255, 255, 255, 0.08);
+}
+
+.history-row__game {
+  font-size: 1rem;
+  text-align: center;
+}
+
+.history-row__symbols {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 1rem;
+  letter-spacing: 2px;
+}
+
+.history-row__symbol-art {
+  display: block;
+  width: 22px;
+  height: 22px;
+  opacity: 0.92;
+}
+
+.history-row__bet {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-mid);
+}
+
+.history-row__outcome {
+  font-weight: 600;
+}
+
+.history-row__outcome--win {
+  color: var(--win);
+}
+
+.history-row__outcome--loss {
+  color: var(--text-low);
+}
+
+.history-row__payout {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.history-row__payout--win {
+  color: var(--gold-200);
+}
+
+.history-row__payout--loss {
+  color: var(--text-mid);
+}
+
+.history-row__balance,
+.history-row__time {
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-low);
+  white-space: nowrap;
+}
+
+/* --- Toasts ------------------------------------------------------------- */
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  max-width: min(360px, 90vw);
+  padding: var(--sp-3) var(--sp-4);
+  font-size: 0.86rem;
+  color: var(--text-hi);
+  background: rgba(14, 13, 20, 0.92);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  animation: toast-in 0.32s var(--ease-out) both;
+  transition: opacity 0.24s var(--ease-soft), transform 0.24s var(--ease-soft);
+}
+
+.toast--leaving {
+  opacity: 0;
+  transform: translateX(16px);
+}
+
+.toast__icon {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.toast__text {
+  line-height: 1.45;
+}
+
+.toast--success {
+  border-color: rgba(61, 220, 132, 0.4);
+}
+
+.toast--success .toast__icon {
+  color: var(--win);
+  background: rgba(61, 220, 132, 0.14);
+}
+
+.toast--win {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-card), var(--glow-gold-md);
+}
+
+.toast--win .toast__icon {
+  color: var(--gold-200);
+  background: rgba(232, 196, 106, 0.16);
+}
+
+.toast--warning {
+  border-color: rgba(232, 196, 106, 0.4);
+}
+
+.toast--warning .toast__icon {
+  color: var(--gold-300);
+  background: rgba(232, 196, 106, 0.14);
+}
+
+.toast--error {
+  border-color: rgba(255, 90, 95, 0.45);
+}
+
+.toast--error .toast__icon {
+  color: var(--lose);
+  background: rgba(255, 90, 95, 0.14);
+}
+
+/* --- Confetti canvas ---------------------------------------------------- */
+.confetti-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-confetti);
+  width: 100%;
+  height: 100%;
+  /* Never in the way: the burst is painted over the win banner but cannot
+     steal a click from its buttons. */
+  pointer-events: none;
+}
+
+/* --- Footer actions ---------------------------------------------------- */
+.site-footer__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+/* --- Keyframes ---------------------------------------------------------- */
+/* The housing's stop: a few pixels of give that decays back to zero while the
+   strip finishes its own overshoot, rebound and micro-settle. It is the frame
+   that moves, never the symbols — the strip is positioned numerically and its
+   final frame is exact. Transform only. */
+@keyframes reel-snap {
+  0% {
+    transform: translate3d(0, -1.4px, 0);
+  }
+  22% {
+    transform: translate3d(0, 2.1px, 0);
+  }
+  46% {
+    transform: translate3d(0, -0.9px, 0);
+  }
+  68% {
+    transform: translate3d(0, 0.4px, 0);
+  }
+  84% {
+    transform: translate3d(0, -0.15px, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* A brief mechanical glint as the drum seats — a housing cue, not a
+   celebration. Opacity only, and deliberately dimmer than a win's lighting. */
+@keyframes reel-flash {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.4;
+  }
+  40% {
+    opacity: 0.1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes win-pop {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1.07);
+  }
+}
+
+/* Sustained golden breathing on a winning cell (filter only, so it never
+   fights win-pop's transform). */
+@keyframes win-glow {
+  from {
+    filter: drop-shadow(0 0 9px rgba(232, 196, 106, 0.45)) brightness(1);
+  }
+  to {
+    filter: drop-shadow(0 0 22px rgba(255, 229, 160, 0.85)) brightness(1.06);
+  }
+}
+
+/* The golden light stroke around a winning symbol, pulsing outward with a hint
+   of the neon cyan in the halo. Box-shadow only, so it composes with win-pop's
+   transform and win-glow's filter instead of competing with them. */
+@keyframes win-ring {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(255, 246, 216, 0.9),
+      0 0 16px rgba(232, 196, 106, 0.55),
+      0 0 30px rgba(57, 230, 208, 0.16);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px rgba(232, 196, 106, 1),
+      0 0 30px rgba(232, 196, 106, 0.85),
+      0 0 56px rgba(57, 230, 208, 0.4);
+  }
+}
+
+/* The cabinet's own neon pulse, breathing between the mid and large gold glows
+   with a cyan edge on the outer halo. Only ever runs on a paying spin. */
+@keyframes win-cabinet {
+  from {
+    box-shadow: var(--reel-window-shadow), var(--glow-gold-md);
+  }
+  to {
+    box-shadow:
+      var(--reel-window-shadow),
+      var(--glow-gold-lg),
+      0 0 64px rgba(57, 230, 208, 0.16);
+  }
+}
+
+/* The win sweep: one band of light travelling across the cabinet, left to
+   right, then off and gone. Transform + opacity only, so it stays on the
+   compositor. */
+@keyframes lights-sweep {
+  0% {
+    opacity: 0;
+    transform: translate3d(-70%, 0, 0);
+  }
+  22% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(70%, 0, 0);
+  }
+}
+
+/* The glow the sweep leaves behind on a big win or a jackpot: a slow, breathing
+   ambient bloom over the whole glass. Opacity + a whisper of scale. */
+@keyframes lights-bloom {
+  from {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0.92;
+    transform: scale(1.015);
+  }
+}
+
+/* The travelling pulse: a lamp comes up hard, holds, and falls away over the
+   next third of the pass, so the lit band has a head and a tail. */
+/* Svetomuzika, locked on: the ring's two halves hard-switching against each
+   other on opposite phases. The rule that applies this uses `steps(1, end)`, so
+   this only has to say where the two states are — the bulb jumps between them
+   with nothing in between, which is the whole point of a strobe. The bright
+   state is well clear of a resting bulb's own glow, so a strobe is an
+   unmistakable lift rather than a bulb that is already alight flickering. */
+@keyframes lamp-strobe {
+  0% {
+    opacity: 1;
+    transform: scale(1.26);
+  }
+  50% {
+    opacity: 0.34;
+    transform: scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.26);
+  }
+}
+
+/* The frame's spill on a paying stop: a slow breath of gold, never a flash. */
+@keyframes win-spill {
+  from {
+    opacity: 0.62;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* The lit wedge breathes rather than blinks — a steady pulse.
+   Opacity only: the wedge is positioned by a conic-gradient, so animating
+   anything else would drag it out of the segment. */
+@keyframes wedge-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* The winning wheel label: colour/glow only — animating `transform` here would
+   fight the inline rotation that positions the label. */
+@keyframes label-flash {
+  0% {
+    opacity: 0.35;
+  }
+  45% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* ==========================================================================
+   13  RESPONSIVE
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .game-layout,
+  .game-layout--wheel,
+  .game-layout--mines {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .site-nav {
+    order: 3;
+    width: 100%;
+    margin-inline: 0;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --sp-8: 48px;
+  }
+
+  .site-header__inner {
+    width: min(1200px, 100% - 2 * var(--sp-4));
+    gap: var(--sp-2) var(--sp-3);
+  }
+
+  .brand__tagline {
+    display: none;
+  }
+
+  .site-nav {
+    overflow-x: auto;
+    justify-content: flex-start;
+    scrollbar-width: none;
+  }
+
+  .site-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-link {
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+
+  #view-root,
+  .site-footer {
+    width: min(1200px, 100% - 2 * var(--sp-4));
+  }
+
+  .balance-chip {
+    margin-left: auto;
+    padding: 7px 14px 7px 10px;
+  }
+
+  .stat-row,
+  .feature-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hero__actions .btn {
+    width: 100%;
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .controls--center {
+    align-items: center;
+  }
+
+  .btn--spin {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .stepper {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .legend__list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .toast-root {
+    right: var(--sp-4);
+    left: var(--sp-4);
+  }
+
+  /* History rows collapse to the essential columns on phones. */
+  .history-card {
+    padding: var(--sp-4);
+  }
+
+  .history-row {
+    grid-template-columns: 24px 1fr auto;
+    grid-template-areas:
+      'game symbols payout'
+      'game outcome balance';
+    gap: var(--sp-1) var(--sp-3);
+    padding: var(--sp-3) var(--sp-2);
+  }
+
+  .history-row__game {
+    grid-area: game;
+    align-self: start;
+  }
+
+  .history-row__symbols {
+    grid-area: symbols;
+  }
+
+  .history-row__payout {
+    grid-area: payout;
+  }
+
+  .history-row__outcome {
+    grid-area: outcome;
+    font-size: 0.8rem;
+  }
+
+  .history-row__balance {
+    grid-area: balance;
+    text-align: right;
+  }
+
+  .history-row__bet,
+  .history-row__time {
+    display: none;
+  }
+
+  .site-footer__actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* The result overlay becomes a bottom sheet on phones. */
+  .result-modal {
+    place-items: end center;
+    padding: 0;
+  }
+
+  .result-modal__panel {
+    width: 100%;
+    /* Full height now (the overlay drops its padding), plus room for the
+       home-indicator strip so the buttons never sit under the system bar. */
+    max-height: 100vh;
+    max-height: 100dvh;
+    padding: var(--sp-5) var(--sp-4) var(--sp-5);
+    padding-bottom: calc(var(--sp-5) + env(safe-area-inset-bottom, 0px));
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    transform: translateY(40px);
+  }
+
+  .result-modal__actions {
+    flex-direction: column;
+  }
+}
+
+/* ==========================================================================
+   13.5  BOOT FALLBACK
+   --------------------------------------------------------------------------
+   The panel in index.html, styled to be invisible on a working boot.
+
+   It is revealed by a DELAYED animation rather than by script, and that is the
+   whole point: the failure it exists to report is "no module ever ran", so a
+   JavaScript-driven reveal could never fire. The delay is what keeps it out of
+   the way — a healthy boot marks the document long before 1.8 s are up.
+
+   No `filter`, no `backdrop-filter`, no shadow: the reveal animates `opacity`,
+   and anything with a filter gets re-rasterised every frame it is animated.
+   A diagnostic is not worth a compositor layer. It also sits on its own
+   z-index above the overlay, so a boot that died behind a half-built modal is
+   still readable.
+   ========================================================================== */
+.boot-fallback {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-4);
+  background: rgba(7, 7, 11, 0.94);
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  animation: boot-reveal 320ms var(--ease-out) 1800ms forwards;
+}
+
+/* Booted: gone for good, and out of the tab order with it. */
+html[data-booted='true'] .boot-fallback {
+  display: none;
+}
+
+.boot-fallback__card {
+  width: min(560px, 100%);
+  padding: var(--sp-5);
+  border: 1px solid rgba(232, 196, 106, 0.28);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, #16130c, #0e0c08);
+}
+
+.boot-fallback__title {
+  margin: 0 0 var(--sp-3);
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--gold-200);
+}
+
+.boot-fallback__text {
+  margin: 0 0 var(--sp-3);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-mid);
+}
+
+.boot-fallback__cmd {
+  display: block;
+  margin: 0 0 var(--sp-3);
+  padding: var(--sp-3);
+  border: 1px solid rgba(232, 196, 106, 0.22);
+  border-radius: var(--r-sm);
+  background: #07070b;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  color: var(--gold-300);
+  overflow-x: auto;
+}
+
+.boot-fallback__text strong {
+  color: var(--text-hi);
+}
+
+@keyframes boot-reveal {
+  to {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* ==========================================================================
+   14  REDUCED MOTION & PREFERENCES
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .bg-aura,
+  .eyebrow__dot,
+  .btn--primary {
+    animation: none;
+  }
+
+  .view:not([hidden]),
+  .btn,
+  .card,
+  .chip,
+  .stat-tile,
+  .nav-link,
+  .reel-symbol,
+  .legend__item,
+  .reel,
+  .reel-summary,
+  .toast,
+  .history-row,
+  .balance-chip {
+    animation: none;
+    transition-duration: 1ms;
+  }
+
+  .result-modal__panel,
+  .result-modal__backdrop {
+    transition-duration: 1ms;
+  }
+
+  /* No chase, no flare, no spill: the ring and the winning wedge hold a steady,
+     even light instead of animating. The spin's own chase is script-driven, so
+     it needs no entry here — the short hop the reduced motion duration allows
+     leaves the band almost still anyway. The atmosphere needs no entry either:
+     it is a light in a room, not motion. */
+  .wheel-label.is-win,
+  .wheel-stage.is-win .wheel-lamp__glow,
+  .wheel-stage.is-win .wheel-lamp__core,
+  .wheel-stage.is-jackpot::after,
+  .wheel-wedge-glow.is-visible {
+    animation: none;
+  }
+
+  .wheel-stage.is-win .wheel-lamp__glow {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+
+  .wheel-stage.is-win .wheel-lamp__core {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+
+  .wheel-stage.is-win::after {
+    opacity: 1;
+    transition: none;
+  }
+
+  .wheel-wedge-glow {
+    transition: none;
+  }
+
+  /* The wheel still lands on the exact segment — it just gets there within the
+     short hop WHEEL_SPIN.reducedMotionDurationMs allows. */
+
+  /* The drums still travel — js/ui/reelView.js just seats them at once — so
+     there is no housing nudge and no promotion to hold on to. The selectors
+     mirror the paying-spin rules so the glint cannot outrank them. */
+  .reel.is-locking,
+  .reel-window.is-paying .reel.is-locking {
+    animation: none;
+  }
+
+  .reel.is-locking::after,
+  .reel-window.is-paying .reel.is-locking::after {
+    animation: none;
+  }
+
+  /* The highlight survives without the motion: the cells keep their golden
+     stroke and a steady halo instead of the pulse. */
+  .reel-symbol.is-win {
+    animation: none;
+    filter: drop-shadow(0 0 14px rgba(232, 196, 106, 0.9));
+  }
+
+  .reel-window.is-win {
+    animation: none;
+  }
+
+  /* The celebration still lights the cabinet, it just holds still: the sweep
+     is dropped and the bloom stays at a steady glow. */
+  .reel-window__lights,
+  .reel-window__lights::before {
+    animation: none;
+  }
+
+  .reel-window.is-win .reel-window__lights {
+    opacity: 0.75;
+  }
+
+  .reel-window.is-win .reel-window__lights::before,
+  .reel-window.is-jackpot .reel-window__lights::before {
+    opacity: 0;
+    transform: none;
+  }
+
+  .btn:hover:not(:disabled),
+  .stat-tile:hover,
+  .legend__item:hover,
+  .balance-chip:hover,
+  .brand:hover {
+    transform: none;
+  }
+
+  .btn::after {
+    display: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --text-mid: #d8d3c8;
+    --text-low: #b3aea4;
+    --line-soft: rgba(232, 196, 106, 0.4);
+    --line-strong: rgba(232, 196, 106, 0.7);
+  }
+}

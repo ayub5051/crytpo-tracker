@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#07070b" />
+  <meta name="description" content="SOQQA — demo soqqalar bilan o’ynaladigan premium kazino o’yinlari: Slotlar, Omad charxi va Mines. Haqiqiy pul ishlatilmaydi." />
+  <meta name="color-scheme" content="dark" />
+  <title>SOQQA — Premium Casino Games</title>
+
+  <!-- Link previews. There is deliberately no og:image: this demo ships no raster
+       art, and pointing a crawler at a file that does not exist is worse than
+       omitting the tag. Add one here if a card image is ever produced. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="SOQQA" />
+  <meta property="og:title" content="SOQQA — Premium Casino Games" />
+  <meta property="og:description" content="Demo soqqalar bilan o’ynaladigan premium kazino o’yinlari: Slotlar, Omad charxi va Mines. Haqiqiy pul ishlatilmaydi." />
+  <meta property="og:locale" content="uz_UZ" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="SOQQA — Premium Casino Games" />
+  <meta name="twitter:description" content="Demo soqqalar bilan o’ynaladigan premium kazino o’yinlari: Slotlar, Omad charxi va Mines. Haqiqiy pul ishlatilmaydi." />
+
+  <!-- Inline favicon: matches the header coin mark and removes the automatic
+       /favicon.ico request, so the console stays clean. -->
+  <link
+    rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23d4a83a'/%3E%3Ccircle cx='12' cy='12' r='7.4' fill='none' stroke='%234a3406' stroke-width='1'/%3E%3Ctext x='12' y='16.2' text-anchor='middle' font-family='Georgia,serif' font-size='11' font-weight='700' fill='%234a3406'%3ES%3C/text%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <!-- Versioned asset URLs. This is a local demo that gets reloaded constantly,
+       and a cached copy of any of it reads exactly like "nothing changed" in the
+       browser, so the URL changes whenever the content does.
+
+       Bump the token below for anything the browser fetches: style.css, the
+       sprite under it, js/main.js, and js/ui/chrome.js with it — a stale
+       main.js would simply never install the chrome guards. Both URLs carry the
+       same number, and tests/wiring.test.mjs fails if they ever disagree. -->
+  <link rel="stylesheet" href="style.css?v=15" />
+  <script type="module" src="js/main.js?v=15"></script>
+</head>
+<body>
+  <!-- ============================================================
+       Shared SVG defs (gradients referenced by id from other icons)
+       ============================================================ -->
+  <svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="coinGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#f9eec1" />
+        <stop offset="45%" stop-color="#e8c46a" />
+        <stop offset="100%" stop-color="#9c7418" />
+      </linearGradient>
+      <linearGradient id="brandGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#fff6d8" />
+        <stop offset="55%" stop-color="#e8c46a" />
+        <stop offset="100%" stop-color="#b08a24" />
+      </linearGradient>
+
+      <!-- ==========================================================
+           MINES GLYPH
+           ----------------------------------------------------------
+           The board’s mine, as a graphical element rather than a
+           <symbol>: the sprite above is asserted (tests/symbols.test.mjs)
+           to declare exactly one <symbol> per entry in SYMBOLS, so slot
+           artwork and board artwork would be indistinguishable to that
+           contract — and a mine is not a slot symbol.
+
+           It is therefore a plain <g> referenced through <use>, exactly
+           the way the clover reuses one leaflet for its four lobes. The
+           orb is cast from the same recipe as the slot set: an iron body
+           with a reflection break so it reads as metal and not as grey
+           paint, eight slim machined spikes, a specular highlight, a
+           crimson core, and a warm rim along the lower-right edge.
+           ========================================================== -->
+      <linearGradient id="sqIron" x1="0.14" y1="0" x2="0.86" y2="1">
+        <stop offset="0" stop-color="#b3bccd" />
+        <stop offset="0.17" stop-color="#6d7688" />
+        <stop offset="0.44" stop-color="#2c3240" />
+        <stop offset="0.57" stop-color="#8a94ab" />
+        <stop offset="0.79" stop-color="#39404f" />
+        <stop offset="1" stop-color="#12151c" />
+      </linearGradient>
+      <linearGradient id="sqIronSpike" x1="0" y1="0" x2="0.88" y2="1">
+        <stop offset="0" stop-color="#c7d0e0" />
+        <stop offset="0.38" stop-color="#5c6577" />
+        <stop offset="1" stop-color="#191d25" />
+      </linearGradient>
+      <radialGradient id="sqEmberCore" cx="0.42" cy="0.33" r="0.74">
+        <stop offset="0" stop-color="#fff7de" />
+        <stop offset="0.16" stop-color="#ff9d5c" />
+        <stop offset="0.48" stop-color="#e0102f" />
+        <stop offset="0.82" stop-color="#8a0a1e" />
+        <stop offset="1" stop-color="#4c0311" />
+      </radialGradient>
+      <!-- A spike, drawn once and rotated into the other seven. -->
+      <path id="sqMineSpike" d="M32 3.4 35.1 16.4 28.9 16.4Z" />
+      <g id="sqMineGlyph">
+        <ellipse cx="32" cy="51.2" rx="13.2" ry="2.5" fill="#04050a" opacity="0.45" />
+        <g fill="url(#sqIronSpike)" stroke="#0b0e14" stroke-opacity="0.6" stroke-width="0.7" stroke-linejoin="round">
+          <use href="#sqMineSpike" />
+          <use href="#sqMineSpike" transform="rotate(45 32 32)" />
+          <use href="#sqMineSpike" transform="rotate(90 32 32)" />
+          <use href="#sqMineSpike" transform="rotate(135 32 32)" />
+          <use href="#sqMineSpike" transform="rotate(180 32 32)" />
+          <use href="#sqMineSpike" transform="rotate(225 32 32)" />
+          <use href="#sqMineSpike" transform="rotate(270 32 32)" />
+          <use href="#sqMineSpike" transform="rotate(315 32 32)" />
+        </g>
+        <circle cx="32" cy="32" r="16.6" fill="url(#sqIron)" stroke="#0b0e14" stroke-opacity="0.75" stroke-width="1.2" />
+        <ellipse cx="32" cy="32" rx="16.4" ry="5.2" fill="none" stroke="#0b0e14" stroke-opacity="0.32" stroke-width="1" />
+        <ellipse cx="23.9" cy="23.6" rx="5.8" ry="3" fill="#ffffff" opacity="0.34" transform="rotate(-42 23.9 23.6)" />
+        <circle cx="32" cy="32" r="8.6" fill="url(#sqEmberCore)" />
+        <circle cx="32" cy="32" r="8.6" fill="none" stroke="#ffdca6" stroke-opacity="0.4" stroke-width="0.8" />
+        <circle cx="32" cy="32" r="3.1" fill="#fff8e4" opacity="0.8" />
+        <path d="M32 32 32 44.8 20.6 40.2Z" fill="#ffffff" opacity="0.1" />
+        <circle cx="32" cy="32" r="16.6" fill="url(#sqRimEdge)" />
+      </g>
+    </defs>
+  </svg>
+
+  <!-- ============================================================
+       SLOT SYMBOL SPRITE — the premium vector artwork for every symbol in
+       js/config.js. Ids are `soqqa-sym-<symbol id>`. The drums build one
+       <svg><use> per strip cell from this sprite at boot and then only ever
+       translate the strip, so a spin writes to no cell at all (see
+       js/ui/reelPhysics.js and js/ui/reelView.js). The paytable, the history
+       rows and the wild legend inline the same art through js/ui/symbolArt.js.
+       Zero-sized rather than `display:none`, so the references always resolve.
+       ============================================================ -->
+  <svg class="symbol-sprite" aria-hidden="true" focusable="false">
+    <defs>
+      <!-- Shared ramps.
+           Every symbol is cast from the same recipe — a metal body, a lit bevel
+           face, an extruded side sitting in shadow, a diagonal gloss, and a warm
+           bounce light along the lower-right edge — so the set reads as one
+           machine rather than seven unrelated drawings. Gradients and flat
+           shapes only: there is deliberately no <filter> anywhere in the sprite,
+           which keeps the drum layers cheap to raster and stops the art going
+           soft behind the glass. -->
+
+      <!-- Metallic gold. The dark band just past halfway is the reflection
+           break; without it a ramp reads as yellow paint rather than metal. -->
+      <linearGradient id="sqGold" x1="0.1" y1="0" x2="0.82" y2="1">
+        <stop offset="0" stop-color="#fffef8" />
+        <stop offset="0.14" stop-color="#fff3c4" />
+        <stop offset="0.32" stop-color="#ffd75e" />
+        <stop offset="0.46" stop-color="#b9871a" />
+        <stop offset="0.58" stop-color="#ffe89b" />
+        <stop offset="0.78" stop-color="#c9942c" />
+        <stop offset="1" stop-color="#71490a" />
+      </linearGradient>
+
+      <!-- The raised, lit face of a bevel: flatter, brighter, less contrast. -->
+      <linearGradient id="sqGoldFace" x1="0.22" y1="0" x2="0.7" y2="1">
+        <stop offset="0" stop-color="#fffffb" />
+        <stop offset="0.38" stop-color="#fff0b6" />
+        <stop offset="0.78" stop-color="#f5c95c" />
+        <stop offset="1" stop-color="#d19c32" />
+      </linearGradient>
+
+      <!-- The extruded side of a solid, in its own shadow. -->
+      <linearGradient id="sqGoldSide" x1="0.1" y1="0" x2="0.9" y2="1">
+        <stop offset="0" stop-color="#a2731a" />
+        <stop offset="0.5" stop-color="#684408" />
+        <stop offset="1" stop-color="#362103" />
+      </linearGradient>
+
+      <!-- Brass, for the bell: the gold ramp warmed and nudged green. -->
+      <linearGradient id="sqBrass" x1="0.12" y1="0" x2="0.8" y2="1">
+        <stop offset="0" stop-color="#fffbe8" />
+        <stop offset="0.2" stop-color="#ffeb9e" />
+        <stop offset="0.4" stop-color="#e8bd4a" />
+        <stop offset="0.55" stop-color="#96690f" />
+        <stop offset="0.7" stop-color="#f7d97a" />
+        <stop offset="0.88" stop-color="#a97c22" />
+        <stop offset="1" stop-color="#5d3d06" />
+      </linearGradient>
+
+      <!-- A specular band: blazing along its upper edge, gone by halfway. -->
+      <linearGradient id="sqGloss" x1="0.1" y1="0" x2="0.24" y2="1">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="0.92" />
+        <stop offset="0.42" stop-color="#ffffff" stop-opacity="0.16" />
+        <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+      </linearGradient>
+
+      <!-- Bounce light for a flat silhouette: silent for the first half, then a
+           warm rim that builds along the lower-right edge. -->
+      <linearGradient id="sqRimLight" x1="0" y1="0" x2="0.9" y2="1">
+        <stop offset="0" stop-color="#ffd98a" stop-opacity="0" />
+        <stop offset="0.56" stop-color="#ffd98a" stop-opacity="0" />
+        <stop offset="0.8" stop-color="#ffe4a6" stop-opacity="0.5" />
+        <stop offset="1" stop-color="#fffaf0" stop-opacity="0.78" />
+      </linearGradient>
+
+      <!-- Bounce light for a sphere: a ring, so a round body keeps its volume
+           however large it is drawn. -->
+      <radialGradient id="sqRimEdge" cx="0.34" cy="0.28" r="0.9">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="0" />
+        <stop offset="0.6" stop-color="#ffffff" stop-opacity="0" />
+        <stop offset="0.86" stop-color="#ffeed0" stop-opacity="0.16" />
+        <stop offset="1" stop-color="#fffaf0" stop-opacity="0.44" />
+      </radialGradient>
+
+      <!-- Crystal. The table is glassy; the facets around it stay flat, which is
+           what keeps them readable as facets at 40 px. -->
+      <linearGradient id="sqIceFace" x1="0.18" y1="0" x2="0.82" y2="1">
+        <stop offset="0" stop-color="#ffffff" />
+        <stop offset="0.44" stop-color="#e6f8ff" />
+        <stop offset="1" stop-color="#a9d9f4" />
+      </linearGradient>
+
+      <!-- Ruby, lit from the upper left. -->
+      <radialGradient id="sqRuby" cx="0.34" cy="0.26" r="0.88">
+        <stop offset="0" stop-color="#ff9d84" />
+        <stop offset="0.32" stop-color="#ee3145" />
+        <stop offset="0.76" stop-color="#a80f24" />
+        <stop offset="1" stop-color="#570410" />
+      </radialGradient>
+      <radialGradient id="sqRubyDeep" cx="0.36" cy="0.3" r="0.9">
+        <stop offset="0" stop-color="#ffa892" />
+        <stop offset="0.32" stop-color="#dc2136" />
+        <stop offset="0.78" stop-color="#8d0a1c" />
+        <stop offset="1" stop-color="#47030d" />
+      </radialGradient>
+
+      <!-- Emerald, plus the leaf and stem that go with the cherries. -->
+      <linearGradient id="sqEmerald" x1="0.18" y1="0" x2="0.82" y2="1">
+        <stop offset="0" stop-color="#d5f9a2" />
+        <stop offset="0.34" stop-color="#79d245" />
+        <stop offset="0.72" stop-color="#2e8f31" />
+        <stop offset="1" stop-color="#11501b" />
+      </linearGradient>
+      <linearGradient id="sqEmeraldFace" x1="0.2" y1="0" x2="0.8" y2="1">
+        <stop offset="0" stop-color="#f0ffcb" />
+        <stop offset="0.46" stop-color="#a8e86c" />
+        <stop offset="1" stop-color="#46a330" />
+      </linearGradient>
+      <linearGradient id="sqEmeraldSide" x1="0.1" y1="0" x2="0.9" y2="1">
+        <stop offset="0" stop-color="#2a7828" />
+        <stop offset="0.5" stop-color="#155618" />
+        <stop offset="1" stop-color="#09300f" />
+      </linearGradient>
+      <linearGradient id="sqLeaf" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#cdf59a" />
+        <stop offset="0.45" stop-color="#57b63c" />
+        <stop offset="1" stop-color="#1f5c1c" />
+      </linearGradient>
+      <linearGradient id="sqStem" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#63b246" />
+        <stop offset="0.5" stop-color="#3a7c27" />
+        <stop offset="1" stop-color="#1d5015" />
+      </linearGradient>
+
+      <!-- Clip paths for the layers that must be painted strictly inside a
+           silhouette: the gloss bands and the reflections on the coin. Default
+           userSpaceOnUse, so they share the 64-unit grid of the symbol. -->
+      <clipPath id="sqStarClip">
+        <path d="M32 6.5 38.2 24.1 56.9 24.5 42.1 35.8 47.5 53.6 32 43 16.5 53.6 21.9 35.8 7.1 24.5 25.8 24.1Z" />
+      </clipPath>
+      <clipPath id="sqSevenClip">
+        <path d="M12 10.5H52L35 53.5H22.5L31.4 21.8H12Z" />
+      </clipPath>
+      <clipPath id="sqIceClip">
+        <path d="M25 10.5H39L52 24 32 54.5 12 24Z" />
+      </clipPath>
+      <clipPath id="sqBellClip">
+        <path d="M32 11.4c-6.5 0-10.9 4.7-11.2 11.6-.3 8.7-2.6 13.3-6.4 17.1h35.2c-3.8-3.8-6.1-8.4-6.4-17.1C42.9 16.1 38.5 11.4 32 11.4Z" />
+      </clipPath>
+      <clipPath id="sqCoinClip">
+        <circle cx="32" cy="32" r="21.4" />
+      </clipPath>
+
+      <!-- The leaflet of the clover, defined once and rotated into the other
+           three lobes, so the four can never drift out of symmetry. -->
+      <path id="sqCloverLobe" d="M0-17.1C-3.6-22.2-11.6-23-13.6-17-15.2-12.2-11.6-8-6.4-5.2-3.6-3.6-1.6-2 0 0 1.6-2 3.6-3.6 6.4-5.2 11.6-8 15.2-12.2 13.6-17 11.6-23 3.6-22.2 0-17.1Z" />
+    </defs>
+
+    <!-- Yulduz (wild) — a gold medallion star, extruded so it reads as a solid
+         casting rather than a flat icon. -->
+    <symbol id="soqqa-sym-wild" viewBox="0 0 64 64">
+      <path d="M32 6.5 38.2 24.1 56.9 24.5 42.1 35.8 47.5 53.6 32 43 16.5 53.6 21.9 35.8 7.1 24.5 25.8 24.1Z" transform="translate(2.6 3.4)" fill="url(#sqGoldSide)" />
+      <path d="M32 6.5 38.2 24.1 56.9 24.5 42.1 35.8 47.5 53.6 32 43 16.5 53.6 21.9 35.8 7.1 24.5 25.8 24.1Z" fill="url(#sqGold)" stroke="#3b2604" stroke-opacity="0.85" stroke-width="1.5" stroke-linejoin="round" />
+      <path d="M32 6.5 38.2 24.1 56.9 24.5 42.1 35.8 47.5 53.6 32 43 16.5 53.6 21.9 35.8 7.1 24.5 25.8 24.1Z" transform="translate(32 32) scale(0.74) translate(-32 -32)" fill="url(#sqGoldFace)" opacity="0.95" stroke="#8a6314" stroke-opacity="0.5" stroke-width="0.9" stroke-linejoin="round" />
+      <g clip-path="url(#sqStarClip)">
+        <rect x="-14" y="-6" width="94" height="22" fill="url(#sqGloss)" opacity="0.8" transform="rotate(-24 32 24)" />
+      </g>
+      <path d="M32 6.5 38.2 24.1 56.9 24.5 42.1 35.8 47.5 53.6 32 43 16.5 53.6 21.9 35.8 7.1 24.5 25.8 24.1Z" fill="url(#sqRimLight)" />
+      <ellipse cx="24.5" cy="19.5" rx="4.4" ry="2.3" fill="#ffffff" opacity="0.62" transform="rotate(-38 24.5 19.5)" />
+    </symbol>
+
+    <!-- Yettilik — a heavy golden 7, extruded and bevelled like a machined
+         brass plate, with no plate behind it so the art stays transparent. -->
+    <symbol id="soqqa-sym-seven" viewBox="0 0 64 64">
+      <path d="M12 10.5H52L35 53.5H22.5L31.4 21.8H12Z" transform="translate(2.6 3.4)" fill="url(#sqGoldSide)" />
+      <path d="M12 10.5H52L35 53.5H22.5L31.4 21.8H12Z" fill="url(#sqGold)" stroke="#3b2604" stroke-opacity="0.9" stroke-width="1.6" stroke-linejoin="round" />
+      <path d="M12 10.5H52L35 53.5H22.5L31.4 21.8H12Z" transform="translate(32 32) scale(0.78) translate(-32 -32)" fill="url(#sqGoldFace)" opacity="0.95" stroke="#8a6314" stroke-opacity="0.55" stroke-width="0.9" stroke-linejoin="round" />
+      <g clip-path="url(#sqSevenClip)">
+        <rect x="2" y="2" width="74" height="18" fill="url(#sqGloss)" opacity="0.85" transform="rotate(-8 32 11)" />
+        <rect x="14" y="26" width="32" height="13" fill="url(#sqGloss)" opacity="0.5" transform="rotate(-8 30 32)" />
+      </g>
+      <path d="M12 10.5H52L35 53.5H22.5L31.4 21.8H12Z" fill="url(#sqRimLight)" />
+      <ellipse cx="21" cy="16.2" rx="5" ry="1.8" fill="#ffffff" opacity="0.5" transform="rotate(-6 21 16.2)" />
+    </symbol>
+
+    <!-- Olmos — a brilliant cut: a glassy table over flat facets, a machined
+         bright girdle, and two sparks thrown off the crown. -->
+    <symbol id="soqqa-sym-diamond" viewBox="0 0 64 64">
+      <path d="M25 10.5H39L42.5 24H21.5Z" fill="url(#sqIceFace)" />
+      <path d="M25 10.5L21.5 24H12Z" fill="#d6ecfa" />
+      <path d="M39 10.5L42.5 24H52Z" fill="#a3cde7" />
+      <path d="M12 24H21.5L32 54.5Z" fill="#8dbcdd" />
+      <path d="M21.5 24H42.5L32 54.5Z" fill="#e8f8ff" />
+      <path d="M42.5 24H52L32 54.5Z" fill="#548cb6" />
+      <path d="M12 23.1H52" stroke="#ffffff" stroke-opacity="0.9" stroke-width="1.5" />
+      <path d="M25 10.5H39L52 24 32 54.5 12 24Z" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="0.8" stroke-linejoin="round" />
+      <path d="M25 10.5L21.5 24M39 10.5L42.5 24M21.5 24L32 54.5 42.5 24" fill="none" stroke="#ffffff" stroke-opacity="0.34" stroke-width="0.7" stroke-linejoin="round" />
+      <g clip-path="url(#sqIceClip)">
+        <rect x="-6" y="-2" width="88" height="16" fill="url(#sqGloss)" opacity="0.85" transform="rotate(-32 30 12)" />
+      </g>
+      <path d="M44.6 31.6 46.7 37 52.1 39.1 46.7 41.2 44.6 46.6 42.5 41.2 37.1 39.1 42.5 37Z" fill="#ffffff" opacity="0.82" />
+      <path d="M19.4 29.8 20.8 33.6 24.6 35 20.8 36.4 19.4 40.2 18 36.4 14.2 35 18 33.6Z" fill="#ffffff" opacity="0.55" />
+    </symbol>
+
+    <!-- Qo’ng’iroq — a cast brass bell: polished dome, machined reeded rim,
+         and a clapper hanging just past the lip. -->
+    <symbol id="soqqa-sym-bell" viewBox="0 0 64 64">
+      <path d="M32 4.4c2 0 3.6 1.6 3.6 3.6v4.2h-7.2V8c0-2 1.6-3.6 3.6-3.6Z" fill="url(#sqBrass)" stroke="#5d3d06" stroke-opacity="0.7" stroke-width="0.9" />
+      <path d="M32 6.6c1 0 1.8.8 1.8 1.8v2.6h-3.6V8.4c0-1 .8-1.8 1.8-1.8Z" fill="#2a1c04" opacity="0.7" />
+      <path d="M32 11.4c-6.5 0-10.9 4.7-11.2 11.6-.3 8.7-2.6 13.3-6.4 17.1h35.2c-3.8-3.8-6.1-8.4-6.4-17.1C42.9 16.1 38.5 11.4 32 11.4Z" transform="translate(2.3 3.1)" fill="url(#sqGoldSide)" />
+      <path d="M32 11.4c-6.5 0-10.9 4.7-11.2 11.6-.3 8.7-2.6 13.3-6.4 17.1h35.2c-3.8-3.8-6.1-8.4-6.4-17.1C42.9 16.1 38.5 11.4 32 11.4Z" fill="url(#sqBrass)" stroke="#4a3004" stroke-opacity="0.85" stroke-width="1.5" stroke-linejoin="round" />
+      <g clip-path="url(#sqBellClip)">
+        <ellipse cx="46.5" cy="27" rx="10" ry="17" fill="#4e3305" opacity="0.3" />
+        <rect x="6" y="2" width="30" height="46" fill="url(#sqGloss)" opacity="0.55" />
+        <path d="M32 11.4c-6.5 0-10.9 4.7-11.2 11.6" fill="none" stroke="#fff0c0" stroke-opacity="0.55" stroke-width="1.6" />
+      </g>
+      <path d="M13.2 40.1h37.6c1.4 0 2.4 1.3 2.1 2.6-.6 2.4-2.7 4.1-5.2 4.1H16.3c-2.5 0-4.6-1.7-5.2-4.1-.3-1.3.7-2.6 2.1-2.6Z" fill="url(#sqGoldFace)" stroke="#5d3d06" stroke-opacity="0.65" stroke-width="0.9" />
+      <path d="M15.2 42.6h33.6" stroke="#fff3c9" stroke-opacity="0.45" stroke-width="1" />
+      <path d="M15.4 44.4h33.2" stroke="#5d3d06" stroke-opacity="0.45" stroke-width="0.9" stroke-dasharray="1.3 1.7" />
+      <circle cx="32" cy="49.8" r="4.3" fill="url(#sqGoldFace)" stroke="#5d3d06" stroke-opacity="0.6" stroke-width="0.9" />
+      <circle cx="30.5" cy="48.3" r="1.4" fill="#fff8e0" opacity="0.8" />
+    </symbol>
+
+    <!-- Gilos — a glossy pair of ruby cherries with a waxed leaf and a luminous
+         core, the pair lit from the same upper-left as every other symbol. -->
+    <symbol id="soqqa-sym-cherry" viewBox="0 0 64 64">
+      <path d="M34.6 12.6c-4.8 6.6-8 13.8-8.9 21.3" stroke="url(#sqStem)" stroke-width="3.4" fill="none" stroke-linecap="round" />
+      <path d="M34.6 12.6c5.6 5.2 9.6 13.2 10.4 23.1" stroke="url(#sqStem)" stroke-width="2.9" fill="none" stroke-linecap="round" />
+      <path d="M33.4 13.8c-3.8 6.4-6.4 13.4-7.2 20.2" stroke="#cdf0a4" stroke-opacity="0.35" stroke-width="1" fill="none" stroke-linecap="round" />
+      <path d="M35 12.2c3.6-5.8 10.6-8.7 17.3-7.6-1 7.2-7 12.1-13.7 11.9Z" fill="url(#sqLeaf)" stroke="#154a12" stroke-opacity="0.55" stroke-width="0.8" stroke-linejoin="round" />
+      <path d="M38 11.4c3.4-3.6 8-5.4 12.6-4.9" stroke="#e2ffc4" stroke-opacity="0.5" stroke-width="1" fill="none" stroke-linecap="round" />
+      <circle cx="22.5" cy="41.5" r="12.6" fill="url(#sqRuby)" />
+      <circle cx="43.5" cy="45.5" r="10.6" fill="url(#sqRubyDeep)" />
+      <ellipse cx="27.5" cy="48.6" rx="8" ry="3.2" fill="#4d0410" opacity="0.34" transform="rotate(-28 27.5 48.6)" />
+      <circle cx="22.5" cy="41.5" r="12.6" fill="url(#sqRimEdge)" />
+      <circle cx="43.5" cy="45.5" r="10.6" fill="url(#sqRimEdge)" />
+      <ellipse cx="17.4" cy="35.2" rx="4.6" ry="2.6" fill="#ffffff" opacity="0.78" transform="rotate(-36 17.4 35.2)" />
+      <ellipse cx="39.4" cy="40.2" rx="3.5" ry="2" fill="#ffffff" opacity="0.6" transform="rotate(-36 39.4 40.2)" />
+    </symbol>
+
+    <!-- Yonca — a four-leaf clover: the leaflet is defined once in the sprite
+         and rotated into the other three lobes, so the four can never fall out
+         of symmetry, and the whole clover is bevelled toward the centre. -->
+    <symbol id="soqqa-sym-clover" viewBox="0 0 64 64">
+      <g fill="url(#sqEmeraldSide)" transform="translate(2.3 3)">
+        <use href="#sqCloverLobe" transform="translate(32 32)" />
+        <use href="#sqCloverLobe" transform="translate(32 32) rotate(90)" />
+        <use href="#sqCloverLobe" transform="translate(32 32) rotate(180)" />
+        <use href="#sqCloverLobe" transform="translate(32 32) rotate(270)" />
+      </g>
+      <g fill="url(#sqEmerald)" stroke="#0d3d14" stroke-opacity="0.5" stroke-width="0.8">
+        <use href="#sqCloverLobe" transform="translate(32 32)" />
+        <use href="#sqCloverLobe" transform="translate(32 32) rotate(90)" />
+        <use href="#sqCloverLobe" transform="translate(32 32) rotate(180)" />
+        <use href="#sqCloverLobe" transform="translate(32 32) rotate(270)" />
+      </g>
+      <g fill="url(#sqEmeraldFace)" opacity="0.9" transform="translate(32 32) scale(0.66) translate(-32 -32)">
+        <use href="#sqCloverLobe" transform="translate(32 32)" />
+        <use href="#sqCloverLobe" transform="translate(32 32) rotate(90)" />
+        <use href="#sqCloverLobe" transform="translate(32 32) rotate(180)" />
+        <use href="#sqCloverLobe" transform="translate(32 32) rotate(270)" />
+      </g>
+      <ellipse cx="23.6" cy="19.2" rx="4.8" ry="2.2" fill="#ffffff" opacity="0.42" transform="rotate(-46 23.6 19.2)" />
+      <circle cx="32" cy="32" r="3.2" fill="#0d3d14" opacity="0.35" />
+    </symbol>
+
+    <!-- Soqqa — the demo coin: a thick double rim around a recessed face, with
+         the brand monogram debossed into the metal. -->
+    <symbol id="soqqa-sym-coin" viewBox="0 0 64 64">
+      <circle cx="32" cy="34.6" r="25" fill="url(#sqGoldSide)" />
+      <circle cx="32" cy="32" r="25" fill="url(#sqGold)" stroke="#4a3004" stroke-opacity="0.85" stroke-width="1.5" />
+      <circle cx="32" cy="32" r="25" fill="none" stroke="#6f4d08" stroke-opacity="0.5" stroke-width="1.4" stroke-dasharray="1.6 2.5" />
+      <circle cx="32" cy="32" r="21.4" fill="url(#sqGoldFace)" />
+      <circle cx="32" cy="32" r="21.4" fill="none" stroke="#a8791c" stroke-opacity="0.55" stroke-width="1.1" />
+      <circle cx="32" cy="32" r="17.4" fill="none" stroke="#c69a2e" stroke-opacity="0.5" stroke-width="1" />
+      <text x="32.8" y="40.6" text-anchor="middle" font-family="Cinzel, Georgia, serif" font-size="22" font-weight="700" fill="#fff8e2" opacity="0.55">S</text>
+      <text x="32" y="39.8" text-anchor="middle" font-family="Cinzel, Georgia, serif" font-size="22" font-weight="700" fill="#6d4a09">S</text>
+      <g clip-path="url(#sqCoinClip)">
+        <ellipse cx="23.5" cy="21" rx="16" ry="9" fill="#ffffff" opacity="0.17" transform="rotate(-36 23.5 21)" />
+        <ellipse cx="19.5" cy="17.5" rx="7" ry="3.2" fill="#ffffff" opacity="0.42" transform="rotate(-36 19.5 17.5)" />
+      </g>
+      <circle cx="32" cy="32" r="25" fill="url(#sqRimEdge)" />
+      <path d="M48 15.6 49.6 19.4 53.4 21 49.6 22.6 48 26.4 46.4 22.6 42.6 21 46.4 19.4Z" fill="#fff6d8" opacity="0.85" />
+    </symbol>
+  </svg>
+
+  <div class="bg-aura" aria-hidden="true"></div>
+
+  <!-- ============================================================
+       HEADER — logo, navigation, demo balance
+       ============================================================ -->
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="brand" href="#/" aria-label="SOQQA — bosh sahifa">
+        <svg class="coin-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="10" fill="url(#coinGrad)" />
+          <circle cx="12" cy="12" r="7.4" fill="none" stroke="rgba(60,40,0,.45)" stroke-width="1" />
+          <text x="12" y="16.2" text-anchor="middle" font-family="Cinzel, serif" font-size="10.5"
+                font-weight="700" fill="#4a3406">S</text>
+        </svg>
+        <span class="brand__text">
+          <span class="brand__name">SOQQA</span>
+          <span class="brand__tagline">Omad o’yinlari — faqat demo</span>
+        </span>
+      </a>
+
+      <nav class="site-nav" aria-label="Asosiy navigatsiya">
+        <a class="nav-link is-active" href="#/" data-route="/">Bosh sahifa</a>
+        <a class="nav-link" href="#/slots" data-route="/slots">Slotlar</a>
+        <a class="nav-link" href="#/wheel" data-route="/wheel">Omad charxi</a>
+        <a class="nav-link" href="#/mines" data-route="/mines">Mines</a>
+        <a class="nav-link" href="#/history" data-route="/history">Tarix</a>
+      </nav>
+
+      <div class="balance-chip" role="status" aria-label="Demo balans">
+        <svg class="coin-icon balance-chip__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="10" fill="url(#coinGrad)" />
+          <circle cx="12" cy="12" r="7.4" fill="none" stroke="rgba(60,40,0,.45)" stroke-width="1" />
+          <text x="12" y="16.2" text-anchor="middle" font-family="Cinzel, serif" font-size="10.5"
+                font-weight="700" fill="#4a3406">S</text>
+        </svg>
+        <span class="balance-chip__meta">
+          <span class="balance-chip__label">Demo balans</span>
+          <span class="balance-chip__value" id="balance-value" data-balance="1000000">1 000 000</span>
+        </span>
+        <span class="balance-chip__unit">soqqa</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="view-root">
+    <!-- ==========================================================
+         VIEW: Bosh sahifa (landing)
+         ========================================================== -->
+    <section class="view" data-view="/" aria-labelledby="hero-title">
+      <div class="hero">
+        <span class="eyebrow">
+          <span class="eyebrow__dot" aria-hidden="true"></span>
+          Demo rejim · haqiqiy pul ishlatilmaydi
+        </span>
+
+        <h1 class="hero__title" id="hero-title">
+          Har bir aylanish — <span class="gold-text">yangi imkoniyat</span>
+        </h1>
+
+        <p class="hero__lead">
+          SOQQA — bepul demo soqqalar bilan o’ynaladigan omad o’yinlari. Slot g’altaklarini
+          aylantiring, Omad charxini sindirib ko’ring, Mines maydonida olmos izlang va barcha
+          natijalarni tarixda kuzatib boring.
+        </p>
+
+        <div class="hero__actions">
+          <a class="btn btn--primary" href="#/slots">
+            <span class="btn__label">Slotlarni o’ynash</span>
+          </a>
+          <a class="btn btn--ghost" href="#/wheel">
+            <span class="btn__label">Omad charxini aylantirish</span>
+          </a>
+          <a class="btn btn--ghost" href="#/mines">
+            <span class="btn__label">Minesni o’ynash</span>
+          </a>
+        </div>
+
+        <ul class="stat-row">
+          <li class="stat-tile">
+            <span class="stat-tile__label">Boshlang’ich balans</span>
+            <span class="stat-tile__value">1 000 000 <em>soqqa</em></span>
+          </li>
+          <li class="stat-tile">
+            <span class="stat-tile__label">Jami aylanishlar</span>
+            <span class="stat-tile__value" data-stat="total-spins">0</span>
+          </li>
+          <li class="stat-tile">
+            <span class="stat-tile__label">Umumiy yutuq</span>
+            <span class="stat-tile__value" data-stat="total-won">0</span>
+          </li>
+          <li class="stat-tile">
+            <span class="stat-tile__label">Eng katta yutuq</span>
+            <span class="stat-tile__value" data-stat="biggest-win">—</span>
+          </li>
+        </ul>
+
+        <div class="feature-grid">
+          <article class="card feature-card">
+            <span class="feature-card__icon" aria-hidden="true">🎰</span>
+            <h2 class="feature-card__title">3 g’altakli slotlar</h2>
+            <p class="feature-card__text">
+              Uchta g’altakni aylantiring va yutuq kombinatsiyasini ushlang. Har bir yutuq
+              koeffitsiyenti yutuq jadvalida ko’rsatilgan.
+            </p>
+          </article>
+
+          <article class="card feature-card">
+            <span class="feature-card__icon" aria-hidden="true">🎡</span>
+            <h2 class="feature-card__title">Omad charxi</h2>
+            <p class="feature-card__text">
+              Charxni aylantirib koeffitsiyentni ko’paytiring — eng katta sovrin ×20 ga teng.
+            </p>
+          </article>
+
+          <article class="card feature-card">
+            <span class="feature-card__icon" aria-hidden="true">💠</span>
+            <h2 class="feature-card__title">Mines — 5×5 xazina</h2>
+            <p class="feature-card__text">
+              25 katak, 1 dan 24 gacha mina. Har bir ochilgan katak koeffitsiyentni oshiradi —
+              minaga tushmasdan oldin yutuqni yechib oling.
+            </p>
+          </article>
+
+          <article class="card feature-card">
+            <span class="feature-card__icon" aria-hidden="true">🧾</span>
+            <h2 class="feature-card__title">Aylanishlar tarixi</h2>
+            <p class="feature-card__text">
+              Har bir aylanish tikish, natija va balans bilan birga qurilma xotirasida saqlanadi.
+            </p>
+          </article>
+        </div>
+
+        <p class="disclaimer">
+          Bu o’yin faqat demo maqsadida. Haqiqiy pul ishlatilmaydi va yutuq real qiymatga ega emas.
+        </p>
+      </div>
+    </section>
+
+    <!-- ==========================================================
+         VIEW: Slotlar  (3 g’altak · 1 yutuq chizig’i)
+         ========================================================== -->
+    <section class="view" data-view="/slots" aria-labelledby="slots-title" hidden>
+      <header class="view-head">
+        <div>
+          <h1 class="view-head__title" id="slots-title">Slot o’yini</h1>
+          <p class="view-head__subtitle">3 g’altak · 1 yutuq chizig’i · demo soqqalar</p>
+        </div>
+        <span class="badge">Demo</span>
+      </header>
+
+      <div class="game-layout">
+        <!-- Slot cabinet -->
+        <div class="card cabinet cabinet--slots">
+          <div class="cabinet__header">
+            <h2 class="cabinet__title">Yutuq chizig’i</h2>
+            <span class="cabinet__hint">O’rta qator hisobga olinadi</span>
+          </div>
+
+          <div class="reel-window">
+            <!-- Celebration lighting. Dark and inert at rest; only a win lights
+                 it (see style.css section 12). -->
+            <div class="reel-window__lights" aria-hidden="true"></div>
+
+            <!-- Three apertures. Each holds one long strip of symbols that is
+                 built once at boot and then only ever slides behind the window:
+                 no cell is added, removed or re-painted by a spin (see
+                 js/ui/reelView.js). The middle row of the aperture is the
+                 payline. -->
+            <div class="reel" data-reel="0" aria-hidden="true">
+              <div class="reel-strip" data-reel-strip></div>
+            </div>
+            <div class="reel" data-reel="1" aria-hidden="true">
+              <div class="reel-strip" data-reel-strip></div>
+            </div>
+            <div class="reel" data-reel="2" aria-hidden="true">
+              <div class="reel-strip" data-reel-strip></div>
+            </div>
+          </div>
+
+          <p class="reel-summary" aria-live="polite" data-reel-summary>
+            Aylantirish tugmasini bosing va g’altaklarni ishga tushiring.
+          </p>
+
+          <div class="controls">
+            <div class="bet-control">
+              <span class="bet-control__label" id="bet-label">Tikish miqdori</span>
+              <div class="stepper" role="group" aria-labelledby="bet-label">
+                <button class="stepper__btn" type="button" data-bet-step="-1"
+                        aria-label="Tikishni kamaytirish" disabled>−</button>
+                <output class="stepper__value" data-bet-value>1 000</output>
+                <button class="stepper__btn" type="button" data-bet-step="1"
+                        aria-label="Tikishni ko’paytirish" disabled>+</button>
+              </div>
+              <div class="quick-bets">
+                <button class="chip is-active" type="button" data-bet-quick="1000" disabled>1 000</button>
+                <button class="chip" type="button" data-bet-quick="5000" disabled>5 000</button>
+                <button class="chip" type="button" data-bet-quick="25000" disabled>25 000</button>
+                <button class="chip" type="button" data-bet-quick="100000" disabled>100 000</button>
+              </div>
+              <p class="bet-hint" data-bet-hint hidden></p>
+            </div>
+
+            <button class="btn btn--primary btn--spin" type="button" data-spin-button disabled>
+              <span class="btn__label">Aylantirish</span>
+            </button>
+          </div>
+
+          <p class="note">
+            <!-- The wild mark below is the same vector art the drums use, so the
+                 legend and the cabinet never show two different icons. -->
+            <svg class="note__icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><use href="#soqqa-sym-wild"></use></svg> —
+            joker belgi: istalgan belgi o’rnini bosadi. Klaviatura: Enter yoki Space.
+          </p>
+        </div>
+
+        <!-- Paytable — rows are rendered from js/config.js -->
+        <aside class="card paytable" aria-labelledby="paytable-title">
+          <h2 class="paytable__title" id="paytable-title">Yutuq jadvali</h2>
+
+          <div class="paytable__head" aria-hidden="true">
+            <span>Belgi</span>
+            <span>3 ta</span>
+            <span>2 ta</span>
+          </div>
+
+          <ul class="paytable__list" data-paytable-list></ul>
+          <p class="paytable__foot">Koeffitsiyentlar tikish miqdoriga ko’paytiriladi.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ==========================================================
+         VIEW: Omad charxi
+         ========================================================== -->
+    <section class="view" data-view="/wheel" aria-labelledby="wheel-title" hidden>
+      <header class="view-head">
+        <div>
+          <h1 class="view-head__title" id="wheel-title">Omad charxi</h1>
+          <p class="view-head__subtitle">12 sektor · koeffitsiyentlar ×0 dan ×20 gacha</p>
+        </div>
+        <span class="badge">Demo</span>
+      </header>
+
+      <div class="game-layout game-layout--wheel">
+        <div class="card cabinet cabinet--wheel">
+          <div class="wheel-stage" data-wheel-stage>
+            <!-- The room behind the wheel: one soft, warm, STATIC falloff — the
+                 light the machine throws onto the wall behind it, and the only
+                 atmosphere layer there is. Deliberately dim, and deliberately a
+                 single monotone wash: a glow that only ever gets fainter on its
+                 way out has no internal edge, so it reads as depth. Give a glow
+                 peaks at two or three different radii and it stops being
+                 atmosphere and becomes a set of glowing rings — which is what
+                 used to be here. Static on purpose: the only light on this
+                 machine that moves is the bulb ring on the rim. -->
+            <div class="wheel-aura" aria-hidden="true"></div>
+
+            <!-- The drum: the ruby/gold face (built by js/ui/wheelDisc.js) and
+                 the win highlight turn with it; the labels are appended to it. -->
+            <div class="wheel-disc" data-wheel-disc>
+              <div class="wheel-face-mount" data-wheel-face></div>
+              <div class="wheel-wedge-glow" data-wheel-glow aria-hidden="true"></div>
+            </div>
+
+            <!-- Static chrome: on a real machine the rim, the lights and the
+                 knob do not turn with the drum. The bulbs chase while the
+                 wheel spins. -->
+            <svg class="wheel-rim" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+              <defs>
+                <!-- Turned metal: one long light flank with a hard break, so the
+                     band reads as a machined ring and not as a flat outline. -->
+                <linearGradient id="sqRimBrass" x1="0.08" y1="0" x2="0.85" y2="1">
+                  <stop offset="0" stop-color="#fff9ea"/>
+                  <stop offset="0.16" stop-color="#f0d183"/>
+                  <stop offset="0.34" stop-color="#b98f2c"/>
+                  <stop offset="0.5" stop-color="#5f4610"/>
+                  <stop offset="0.62" stop-color="#c9a24a"/>
+                  <stop offset="0.78" stop-color="#f6dd9c"/>
+                  <stop offset="1" stop-color="#553d0c"/>
+                </linearGradient>
+                <linearGradient id="sqRimSpec" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="#fffdf4" stop-opacity="0"/>
+                  <stop offset="0.5" stop-color="#fffdf4" stop-opacity="0.5"/>
+                  <stop offset="1" stop-color="#fffdf4" stop-opacity="0"/>
+                </linearGradient>
+                <linearGradient id="sqRimRecess" x1="0.1" y1="0" x2="0.6" y2="1">
+                  <stop offset="0" stop-color="#000" stop-opacity="0.1"/>
+                  <stop offset="0.5" stop-color="#000" stop-opacity="0.55"/>
+                  <stop offset="1" stop-color="#000" stop-opacity="0.35"/>
+                </linearGradient>
+                <!-- The machined outer bevel: a bright lip that falls into
+                     shadow, so the frame reads as a turned edge. -->
+                <linearGradient id="sqRimBevel" x1="0.07" y1="0" x2="0.8" y2="1">
+                  <stop offset="0" stop-color="#fffbe8" stop-opacity="0.9"/>
+                  <stop offset="0.24" stop-color="#e8c46a" stop-opacity="0.75"/>
+                  <stop offset="0.55" stop-color="#4a3409" stop-opacity="0.9"/>
+                  <stop offset="0.8" stop-color="#b98f2c" stop-opacity="0.7"/>
+                  <stop offset="1" stop-color="#2f2105" stop-opacity="0.8"/>
+                </linearGradient>
+                <!-- The dark reflective groove between the outer bevel and the
+                     band — the shadowed seam of a two-piece frame. -->
+                <linearGradient id="sqRimGroove" x1="0" y1="0.2" x2="0.9" y2="1">
+                  <stop offset="0" stop-color="#000" stop-opacity="0.72"/>
+                  <stop offset="0.34" stop-color="#8a6a24" stop-opacity="0.5"/>
+                  <stop offset="0.62" stop-color="#000" stop-opacity="0.78"/>
+                  <stop offset="1" stop-color="#000" stop-opacity="0.7"/>
+                </linearGradient>
+                <!-- A lit guide rail just inside the well: the second
+                     concentric ring, catching the same light as the band. -->
+                <linearGradient id="sqRimRail" x1="0.05" y1="0" x2="0.9" y2="1">
+                  <stop offset="0" stop-color="#fff6dc" stop-opacity="0.62"/>
+                  <stop offset="0.3" stop-color="#c9a24a" stop-opacity="0.34"/>
+                  <stop offset="0.58" stop-color="#3a2a08" stop-opacity="0.7"/>
+                  <stop offset="0.82" stop-color="#e8c46a" stop-opacity="0.4"/>
+                  <stop offset="1" stop-color="#241a06" stop-opacity="0.6"/>
+                </linearGradient>
+                <!-- The well itself: transparent over the drum, deepening into
+                     black right under the band. This is the strong inner
+                     shadow that seats the drum INSIDE the frame. -->
+                <radialGradient id="sqRimWell" cx="50%" cy="50%" r="50%">
+                  <stop offset="0" stop-color="#000" stop-opacity="0"/>
+                  <stop offset="0.8" stop-color="#000" stop-opacity="0"/>
+                  <stop offset="0.9" stop-color="#050301" stop-opacity="0.42"/>
+                  <stop offset="0.97" stop-color="#000" stop-opacity="0.62"/>
+                  <stop offset="1" stop-color="#000" stop-opacity="0.7"/>
+                </radialGradient>
+                <!-- The neon filament on the frame’s outer edge: a hot gold →
+                     amber → magenta thread running the circumference. It is
+                     deliberately WARM now — the violet/cyan version that used
+                     to live here was a cool line on a warm machine, which is
+                     how an edge light ends up reading as grey trim. This is
+                     the lit rim of a powered cabinet: bright enough to be seen
+                     as light, thin enough to stay an edge rather than an
+                     outline. Gold is still the material underneath it. -->
+                <linearGradient id="sqRimNeon" x1="0.08" y1="0" x2="0.92" y2="1">
+                  <stop offset="0" stop-color="#fff3c4" stop-opacity="0.92"/>
+                  <stop offset="0.26" stop-color="#ffc02e" stop-opacity="0.74"/>
+                  <stop offset="0.54" stop-color="#ff8a1e" stop-opacity="0.66"/>
+                  <stop offset="0.78" stop-color="#ff4d6d" stop-opacity="0.6"/>
+                  <stop offset="1" stop-color="#ffe27a" stop-opacity="0.86"/>
+                </linearGradient>
+              </defs>
+              <!-- The drum sits down inside the frame. Outermost first: the
+                   turned outer bevel, the dark groove, the recess the drum
+                   drops into, then the brass band and its specular arc —
+                   four concentric rings, which is what gives the frame its
+                   depth instead of reading as one flat outline. -->
+              <circle class="wheel-rim__bevel" cx="50" cy="50" r="49.15" fill="none"
+                      stroke="url(#sqRimBevel)" stroke-width="1.7"/>
+              <circle class="wheel-rim__groove" cx="50" cy="50" r="48.35" fill="none"
+                      stroke="url(#sqRimGroove)" stroke-width="1.5"/>
+              <circle class="wheel-rim__seat" cx="50" cy="50" r="44.6" fill="none"
+                      stroke="url(#sqRimRecess)" stroke-width="4.4"/>
+              <circle class="wheel-rim__band" cx="50" cy="50" r="47.4" fill="none"
+                      stroke="url(#sqRimBrass)" stroke-width="6"/>
+              <path class="wheel-rim__spec" d="M 7.04 29.97 A 47.4 47.4 0 0 1 92.96 29.97"
+                    fill="none" stroke="url(#sqRimSpec)" stroke-width="2.4" stroke-linecap="round"/>
+              <circle class="wheel-rim__rail" cx="50" cy="50" r="42.6" fill="none"
+                      stroke="url(#sqRimRail)" stroke-width="1.1"/>
+              <circle class="wheel-rim__edge" cx="50" cy="50" r="44.35" fill="none"
+                      stroke="#1d1404" stroke-width="1" opacity="0.9"/>
+              <circle class="wheel-rim__edge" cx="50" cy="50" r="49.75" fill="none"
+                      stroke="#fff6dc" stroke-width="0.6" opacity="0.5"/>
+              <circle class="wheel-rim__neon" cx="50" cy="50" r="49.5" fill="none"
+                      stroke="url(#sqRimNeon)" stroke-width="0.8" opacity="0.95"/>
+              <circle class="wheel-rim__neon-halo" cx="50" cy="50" r="49.15" fill="none"
+                      stroke="url(#sqRimNeon)" stroke-width="2.6" opacity="0.42"/>
+              <circle class="wheel-rim__well" cx="50" cy="50" r="50" fill="url(#sqRimWell)"/>
+            </svg>
+
+            <!-- The lamps on the rim: one socket + one animated glow per bulb,
+                 built from WHEEL_FRAME by js/ui/wheelDisc.js. They sit above the
+                 rim so the halo spills onto the brass, and they are plain HTML
+                 with no filter anywhere in the subtree — which is what lets the
+                 chase run on the compositor instead of repainting the SVG on
+                 every frame of the spin. -->
+            <div class="wheel-lamps" data-wheel-lamps aria-hidden="true"></div>
+
+            <!-- The landing pin: a 3D gold arrow whose tip flicks as each rim
+                 peg sweeps under it (--wheel-pin-flick, written per frame),
+                 and which snaps down to its seat as the drum settles. -->
+            <div class="wheel-pointer" data-wheel-pointer aria-hidden="true">
+              <svg class="wheel-pointer__art" viewBox="0 0 44 64" aria-hidden="true" focusable="false">
+                <defs>
+                  <linearGradient id="sqPointerBrass" x1="0" y1="0" x2="0.9" y2="1">
+                    <stop offset="0" stop-color="#fffdf4"/>
+                    <stop offset="0.2" stop-color="#f4d992"/>
+                    <stop offset="0.42" stop-color="#ac8223"/>
+                    <stop offset="0.55" stop-color="#4a3409"/>
+                    <stop offset="0.76" stop-color="#d9ad4b"/>
+                    <stop offset="1" stop-color="#6b5012"/>
+                  </linearGradient>
+                  <!-- A cool bounce along the blade’s lit edge, picked up off the
+                       frame’s neon hairline, so the arrow belongs to the same
+                       lighting rig as the rim instead of sitting on top of it. -->
+                  <linearGradient id="sqPointerNeon" x1="0" y1="1" x2="0.6" y2="0">
+                    <stop offset="0" stop-color="#39e6d0" stop-opacity="0.34"/>
+                    <stop offset="0.5" stop-color="#8b5cf6" stop-opacity="0.22"/>
+                    <stop offset="1" stop-color="#c4a2ff" stop-opacity="0"/>
+                  </linearGradient>
+                  <linearGradient id="sqPointerBevel" x1="0.1" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#fffdf4" stop-opacity="0.85"/>
+                    <stop offset="1" stop-color="#fff8e2" stop-opacity="0"/>
+                  </linearGradient>
+                  <!-- The shadowed flank of the blade, so the arrow reads as a
+                       solid wedge with two lit sides rather than a silhouette. -->
+                  <linearGradient id="sqPointerShade" x1="1" y1="0.2" x2="0.3" y2="1">
+                    <stop offset="0" stop-color="#3a2a08" stop-opacity="0.15"/>
+                    <stop offset="0.55" stop-color="#2b1d05" stop-opacity="0.55"/>
+                    <stop offset="1" stop-color="#1a1203" stop-opacity="0.75"/>
+                  </linearGradient>
+                </defs>
+                <path class="wheel-pointer__blade"
+                      d="M22 63 L5 24 Q3 18 9 15 L18 9 Q22 6 26 9 L35 15 Q41 18 39 24 Z"
+                      fill="url(#sqPointerBrass)"/>
+                <path class="wheel-pointer__shade"
+                      d="M22 63 L39 24 Q41 18 35 15 L26 9 Q22 6 22 6 Z"
+                      fill="url(#sqPointerShade)"/>
+                <path class="wheel-pointer__bevel"
+                      d="M22 63 L5 24 Q3 18 9 15 L18 9 Q22 6 26 9 Z"
+                      fill="url(#sqPointerBevel)"/>
+                <path class="wheel-pointer__neon"
+                      d="M22 63 L5 24 Q3 18 9 15 L18 9 Q22 6 25 9"
+                      fill="none" stroke="url(#sqPointerNeon)" stroke-width="1.5" stroke-linecap="round"/>
+                <circle class="wheel-pointer__pivot" cx="22" cy="13.5" r="6.2" fill="url(#sqPointerBrass)"/>
+                <circle class="wheel-pointer__pivot-ring" cx="22" cy="13.5" r="4.6" fill="none"
+                        stroke="#fff8e2" stroke-opacity="0.34" stroke-width="0.7"/>
+                <circle class="wheel-pointer__pivot-core" cx="22" cy="13.5" r="2.5" fill="#2b1d05"/>
+              </svg>
+            </div>
+
+            <!-- Polished brass centrepiece — no lettering, just a knob. -->
+            <div class="wheel-hub" aria-hidden="true"></div>
+          </div>
+
+          <p class="reel-summary" aria-live="polite" data-wheel-summary>
+            Charxni aylantirish tugmasini bosing va omadingizni sinab ko’ring.
+          </p>
+
+          <div class="controls controls--center">
+            <div class="bet-control">
+              <span class="bet-control__label" id="wheel-bet-label">Tikish miqdori</span>
+              <div class="stepper" role="group" aria-labelledby="wheel-bet-label">
+                <button class="stepper__btn" type="button" data-bet-step="-1"
+                        aria-label="Tikishni kamaytirish">−</button>
+                <output class="stepper__value" data-bet-value>1 000</output>
+                <button class="stepper__btn" type="button" data-bet-step="1"
+                        aria-label="Tikishni ko’paytirish">+</button>
+              </div>
+              <div class="quick-bets">
+                <button class="chip is-active" type="button" data-bet-quick="1000">1 000</button>
+                <button class="chip" type="button" data-bet-quick="5000">5 000</button>
+                <button class="chip" type="button" data-bet-quick="25000">25 000</button>
+                <button class="chip" type="button" data-bet-quick="100000">100 000</button>
+              </div>
+              <p class="bet-hint" data-bet-hint hidden></p>
+            </div>
+
+            <button class="btn btn--primary btn--spin" type="button" data-wheel-spin>
+              <span class="btn__label">Aylantirish</span>
+            </button>
+          </div>
+
+          <p class="note">
+            Har bir sektorning koeffitsiyenti tikish miqdoriga ko’paytiriladi. Klaviatura: Enter yoki Space.
+          </p>
+        </div>
+
+        <!-- Legend — rows (multiplier + real odds) are rendered from js/config.js -->
+        <aside class="card legend" aria-labelledby="legend-title">
+          <h2 class="legend__title" id="legend-title">Koeffitsiyentlar</h2>
+          <ul class="legend__list" data-wheel-legend></ul>
+          <p class="legend__foot">Foizlar — haqiqiy tushish ehtimoli (sektor maydoni emas).</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ==========================================================
+         VIEW: MINES (5×5 xazina)
+         ========================================================== -->
+    <section class="view" data-view="/mines" aria-labelledby="mines-title" hidden>
+      <header class="view-head">
+        <div>
+          <h1 class="view-head__title" id="mines-title">Mines — 5×5 xazina</h1>
+          <p class="view-head__subtitle">25 katak · 1 dan 24 gacha mina · koeffitsiyent haqiqiy ehtimoldan hisoblanadi</p>
+        </div>
+        <span class="badge">Demo</span>
+      </header>
+
+      <div class="game-layout game-layout--mines">
+        <div class="card cabinet cabinet--mines">
+          <div class="cabinet__header">
+            <h2 class="cabinet__title">Xazina maydoni</h2>
+            <span class="cabinet__hint">Olmosni toping — minaga tushmang</span>
+          </div>
+
+          <!-- The 25 tiles are built from MINES.columns × MINES.rows by
+               js/ui/minesGrid.js and then never looked up again: each one is a
+               button holding a preserve-3d inner that turns 180° to reveal the
+               coin that was always under it. Empty here on purpose — a 5×5 grid
+               written out in markup would be a second copy of the board’s
+               geometry, free to drift from the sizes the odds are computed
+               against. -->
+          <div class="mines-stage" data-mines-stage>
+            <div class="mines-stage__glow" aria-hidden="true"></div>
+            <div class="mines-grid" data-mines-grid role="group" aria-label="5 ga 5 katakli maydon"></div>
+          </div>
+
+          <p class="reel-summary" aria-live="polite" data-mines-summary>
+            Boshlash tugmasini bosing — so’ng kataklarni ochib, yutuqni yechib oling.
+          </p>
+
+          <div class="controls">
+            <div class="bet-control">
+              <span class="bet-control__label" id="mines-bet-label">Tikish miqdori</span>
+              <div class="stepper" role="group" aria-labelledby="mines-bet-label">
+                <button class="stepper__btn" type="button" data-bet-step="-1"
+                        aria-label="Tikishni kamaytirish">−</button>
+                <output class="stepper__value" data-bet-value>1 000</output>
+                <button class="stepper__btn" type="button" data-bet-step="1"
+                        aria-label="Tikishni ko’paytirish">+</button>
+              </div>
+              <div class="quick-bets">
+                <button class="chip is-active" type="button" data-bet-quick="1000">1 000</button>
+                <button class="chip" type="button" data-bet-quick="5000">5 000</button>
+                <button class="chip" type="button" data-bet-quick="25000">25 000</button>
+                <button class="chip" type="button" data-bet-quick="100000">100 000</button>
+              </div>
+              <p class="bet-hint" data-bet-hint hidden></p>
+            </div>
+
+            <div class="bet-control">
+              <span class="bet-control__label" id="mines-count-label">Mina soni</span>
+              <div class="stepper" role="group" aria-labelledby="mines-count-label">
+                <button class="stepper__btn" type="button" data-mines-count-step="-1"
+                        aria-label="Mina sonini kamaytirish">−</button>
+                <output class="stepper__value" data-mines-count aria-live="polite">3</output>
+                <button class="stepper__btn" type="button" data-mines-count-step="1"
+                        aria-label="Mina sonini ko’paytirish">+</button>
+              </div>
+              <div class="quick-bets">
+                <button class="chip" type="button" data-mines-count-quick="1">1</button>
+                <button class="chip is-active" type="button" data-mines-count-quick="3">3</button>
+                <button class="chip" type="button" data-mines-count-quick="5">5</button>
+                <button class="chip" type="button" data-mines-count-quick="10">10</button>
+                <button class="chip" type="button" data-mines-count-quick="24">24</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="mines-actions">
+            <button class="btn btn--primary" type="button" data-mines-start>
+              <span class="btn__label" data-mines-start-label>Boshlash</span>
+            </button>
+            <button class="btn btn--gold btn--cashout" type="button" data-mines-cashout disabled>
+              <span class="btn__label">Pulni olish</span>
+            </button>
+          </div>
+
+          <p class="note">
+            Har bir ochilgan katak koeffitsiyentni oshiradi. Mina ochilsa raund tugaydi —
+            yutuqni oldin yechib oling.
+          </p>
+        </div>
+
+        <!-- Read-outs. Every one of them is derived from the engine, never from
+             a running total kept in the view. -->
+        <aside class="card mines-panel" aria-labelledby="mines-panel-title">
+          <h2 class="paytable__title" id="mines-panel-title">Raund ko’rsatkichlari</h2>
+
+          <dl class="mines-hud">
+            <div class="mines-readout">
+              <dt class="mines-readout__label">Ochilgan kataklar</dt>
+              <dd class="mines-readout__value" data-mines-progress>0 / 22 katak</dd>
+            </div>
+            <div class="mines-readout">
+              <dt class="mines-readout__label">Koeffitsiyent</dt>
+              <dd class="mines-readout__value mines-readout__value--mult" data-mines-multiplier>—</dd>
+            </div>
+            <div class="mines-readout">
+              <dt class="mines-readout__label">Keyingi katak</dt>
+              <dd class="mines-readout__value" data-mines-next>—</dd>
+            </div>
+            <div class="mines-readout">
+              <dt class="mines-readout__label">Yechish mumkin</dt>
+              <dd class="mines-readout__value mines-readout__value--payout" data-mines-potential>0 soqqa</dd>
+            </div>
+          </dl>
+
+          <p class="paytable__foot">Koeffitsiyentlar 25 katak va tanlangan mina sonidan kelib chiqib hisoblanadi.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ==========================================================
+         VIEW: Tarix (Aylanishlar tarixi)
+         ========================================================== -->
+    <section class="view" data-view="/history" aria-labelledby="history-title" hidden>
+      <header class="view-head">
+        <div>
+          <h1 class="view-head__title" id="history-title">Aylanishlar tarixi</h1>
+          <p class="view-head__subtitle">So’nggi 50 ta aylanish qurilmada saqlanadi</p>
+        </div>
+        <button class="btn btn--ghost btn--small" type="button" data-action="clear-history" disabled>
+          Tarixni tozalash
+        </button>
+      </header>
+
+      <div class="card history-card">
+        <p class="history-summary" data-history-summary></p>
+        <ul class="history-list" data-history-list></ul>
+
+        <div class="empty-state" data-history-empty>
+          <span class="empty-state__icon" aria-hidden="true">🗒️</span>
+          <p class="empty-state__title">Hozircha o’yin o’ynalmagan</p>
+          <p class="empty-state__text">
+            Slot, Omad charxi yoki Mines o’ynalganidan so’ng natijalar shu yerda ko’rinadi.
+          </p>
+          <a class="btn btn--primary btn--small" href="#/slots">Slotlarni o’ynash</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================================================
+       FOOTER
+       ============================================================ -->
+  <footer class="site-footer">
+    <p class="site-footer__text">
+      Bu o’yin faqat demo maqsadida. Haqiqiy pul ishlatilmaydi va yutuq real qiymatga ega emas.
+    </p>
+    <div class="site-footer__actions">
+      <button class="btn btn--ghost btn--small" type="button" data-action="reset-balance">
+        Demo balansni tiklash
+      </button>
+      <p class="site-footer__meta">
+        <span>SOQQA</span>
+        <span aria-hidden="true">·</span>
+        <span>v0.4 — slot, Omad charxi va Mines</span>
+      </p>
+    </div>
+  </footer>
+
+  <!-- Celebration layer + runtime slots -->
+  <canvas class="confetti-canvas" id="confetti-canvas" aria-hidden="true"></canvas>
+  <div class="toast-root" id="toast-root" aria-live="polite" aria-atomic="false"></div>
+
+  <!-- ============================================================
+       BOOT FALLBACK — the page explaining its own silence
+       ============================================================
+       There is exactly one failure that makes this whole page look dead:
+       `type="module"` scripts are blocked when index.html is opened straight
+       from disk, because file:// has a null origin. No module loads, so
+       js/main.js never runs, so nothing is ever wired — the spin button does
+       nothing and no state class is applied. It looks like a crash and it is
+       actually a delivery problem.
+
+       This panel is the diagnostic, and it needs no script to work: the
+       stylesheet keeps it hidden and reveals it after a short delay, and
+       js/main.js removes it for good by marking the document booted. If the
+       modules load, the panel is gone before anyone could read it; if they do
+       not, the page says why instead of sitting there frozen.
+       ============================================================ -->
+  <div class="boot-fallback" id="boot-fallback" role="status">
+    <div class="boot-fallback__card">
+      <p class="boot-fallback__title">O’yin yuklanmadi</p>
+      <p class="boot-fallback__text">
+        SOQQA modul sifatida yuklanadi, shuning uchun uni to’g’ridan-to’g’ri
+        fayldan (<code>file://</code>) ochib bo’lmaydi. Loyihani oddiy
+        veb-server orqali oching:
+      </p>
+      <code class="boot-fallback__cmd">cd soqqa &amp;&amp; python3 -m http.server 5500</code>
+      <p class="boot-fallback__text">
+        So’ng brauzerda <strong>http://localhost:5500</strong> manzilini oching.
+      </p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       RESULT OVERLAY — win/loss modal (see js/ui/resultModal.js)
+       ============================================================ -->
+  <div class="modal-root" id="modal-root" hidden>
+    <div class="result-modal" data-result-modal role="dialog" aria-modal="true"
+         aria-labelledby="result-modal-title" aria-describedby="result-modal-message">
+      <div class="result-modal__backdrop" data-modal-backdrop></div>
+
+      <div class="result-modal__panel">
+        <span class="result-modal__icon" data-modal-icon aria-hidden="true">🎉</span>
+
+        <h2 class="result-modal__title" id="result-modal-title" data-modal-title>Tabriklaymiz!</h2>
+        <p class="result-modal__message" id="result-modal-message" data-modal-message></p>
+        <p class="result-modal__amount" data-modal-amount></p>
+
+        <dl class="result-modal__facts">
+          <div class="result-modal__fact">
+            <dt>Tikish</dt>
+            <dd data-modal-bet></dd>
+          </div>
+          <div class="result-modal__fact">
+            <dt>Koeffitsiyent</dt>
+            <dd data-modal-multiplier></dd>
+          </div>
+          <div class="result-modal__fact">
+            <dt data-modal-fact-label>Sektor</dt>
+            <dd data-modal-fact></dd>
+          </div>
+        </dl>
+
+        <p class="result-modal__balance" data-modal-balance></p>
+
+        <div class="result-modal__actions">
+          <button class="btn btn--primary" type="button" data-modal-replay>
+            <span class="btn__label">Yana o’ynash</span>
+          </button>
+          <button class="btn btn--ghost" type="button" data-modal-close>
+            <span class="btn__label">Yopish</span>
+          </button>
+        </div>
+
+        <p class="result-modal__disclaimer">
+          Faqat demo — haqiqiy pul ishlatilmaydi va yutuq real qiymatga ega emas.
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

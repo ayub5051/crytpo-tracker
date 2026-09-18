@@ -1,0 +1,11 @@
+{
+  "name": "soqqa",
+  "version": "0.4.0",
+  "private": true,
+  "description": "SOQQA — demo casino-style app (HTML/CSS/JS only, no dependencies)",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/run-tests.mjs",
+    "serve": "python3 -m http.server 5500"
+  }
+}
