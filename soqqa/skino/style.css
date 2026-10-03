@@ -421,6 +421,7 @@ a {
 }
 
 .skin-card {
+  --rarity: var(--accent);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -435,23 +436,120 @@ a {
   will-change: transform;
 }
 
-/* Elegant hover: subtle lift + soft glow. */
+/* Elegant hover: subtle lift + soft glow tinted by the card's rarity. */
 .skin-card:hover {
   transform: translateY(-5px);
-  border-color: var(--line-soft);
+  border-color: color-mix(in srgb, var(--rarity) 42%, transparent);
   background: var(--bg-card-hover);
   box-shadow:
     0 24px 50px -28px rgba(0, 0, 0, 0.85),
-    0 0 0 1px var(--accent-soft),
-    0 0 34px -18px var(--accent-glow);
+    0 0 0 1px color-mix(in srgb, var(--rarity) 22%, transparent),
+    0 0 34px -16px color-mix(in srgb, var(--rarity) 34%, transparent);
+}
+
+/* Thin rarity stripe across the top edge of the card. */
+.skin-rarity-bar {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--rarity) 75%, transparent),
+    color-mix(in srgb, var(--rarity) 28%, transparent)
+  );
+  opacity: 0.75;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.skin-card:hover .skin-rarity-bar {
+  opacity: 1;
 }
 
 .skin-thumb {
+  position: relative;
+  display: grid;
+  place-items: center;
   aspect-ratio: 4 / 3;
   border-bottom: 1px solid var(--line-faint);
   background:
-    radial-gradient(120% 90% at 50% 0%, rgba(94, 210, 226, 0.08), transparent 62%),
+    radial-gradient(
+      120% 90% at 50% 0%,
+      color-mix(in srgb, var(--rarity) 12%, transparent),
+      transparent 62%
+    ),
     linear-gradient(160deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+}
+
+.skin-glyph {
+  width: 46%;
+  max-width: 96px;
+  height: auto;
+  color: var(--text-hi);
+  opacity: 0.5;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.5));
+  transition: transform var(--dur-slow) var(--ease), opacity var(--dur) var(--ease);
+}
+
+.skin-card:hover .skin-glyph {
+  transform: translateY(-4px) scale(1.04);
+  opacity: 0.78;
+}
+
+.skin-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.32rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--text-hi);
+}
+
+.skin-weapon {
+  color: var(--text-hi);
+}
+
+.skin-sep {
+  color: var(--text-low);
+  font-weight: 400;
+}
+
+.skin-finish {
+  color: var(--text-mid);
+  font-weight: 500;
+}
+
+.skin-condition {
+  font-size: 0.76rem;
+  letter-spacing: 0.03em;
+  color: var(--text-low);
+}
+
+.skin-price {
+  font-size: 1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-hi);
+}
+
+.skin-rarity-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.skin-rarity-label::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rarity);
+  box-shadow: 0 0 8px -1px color-mix(in srgb, var(--rarity) 70%, transparent);
 }
 
 .skin-body {

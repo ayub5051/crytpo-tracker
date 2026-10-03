@@ -1,8 +1,10 @@
 /* ============================================================================
    SKINO — app shell
-   Stage 1: navigation between Market and Inventory with smooth transitions.
-   No skin data, filters or purchase logic yet.
+   Navigation between Market and Inventory, plus mock market rendering.
+   No filters, purchase logic or detail views yet.
    ========================================================================= */
+
+import { SKINS, renderMarket } from './skins.js';
 
 const VIEWS = ['market', 'inventory'];
 const TRANSITION_MS = 500;
@@ -97,6 +99,17 @@ if (document.fonts?.ready) {
   document.fonts.ready.then(() => {
     positionIndicator(navLinks.find((l) => l.dataset.viewTarget === current));
   });
+}
+
+/* ------------------------------------------------------- market rendering */
+
+const marketGrid = document.querySelector('[data-market-grid]');
+const marketCount = document.querySelector('[data-market-count]');
+
+renderMarket(marketGrid, SKINS);
+
+if (marketCount) {
+  marketCount.textContent = `${SKINS.length} listings`;
 }
 
 syncTriggers(current);
