@@ -67,14 +67,23 @@
         >
           Inventory
         </button>
+        <button
+          class="nav-link"
+          type="button"
+          data-view-target="games"
+          aria-controls="view-games"
+          aria-selected="false"
+        >
+          Games
+        </button>
         <span class="nav-indicator" aria-hidden="true"></span>
       </nav>
 
-      <div class="balance" role="group" aria-label="Demo balance">
-        <span class="balance-label">Demo balance</span>
+      <div class="balance" role="group" aria-label="Crystal balance">
+        <span class="balance-label">Crystals</span>
         <span class="balance-value">
-          <span class="balance-currency" aria-hidden="true">$</span>
-          <span data-balance>2,500.00</span>
+          <span class="balance-currency" aria-hidden="true">◆</span>
+          <span data-balance>2,500</span>
         </span>
       </div>
     </div>
@@ -160,6 +169,65 @@
               Browse the market
             </button>
           </div>
+        </div>
+      </section>
+
+      <!-- Games (structure only — mini-games arrive later) -->
+      <section
+        class="view"
+        id="view-games"
+        data-view="games"
+        aria-label="Games"
+        hidden
+      >
+        <div class="view-head">
+          <div>
+            <h2 class="view-title">Games</h2>
+            <p class="view-subtitle">Ways to win Crystals are on the way.</p>
+          </div>
+          <span class="view-count">Coming soon</span>
+        </div>
+
+        <div class="game-grid">
+          <article class="game-card">
+            <span class="game-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
+                <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.3" />
+                <path d="M12 3.5v17M3.5 12h17M6 6l12 12M18 6 6 18" stroke="currentColor"
+                  stroke-width="1.1" opacity="0.55" />
+              </svg>
+            </span>
+            <h3 class="game-title">Wheel</h3>
+            <p class="game-copy">Spin for a shot at high-tier skins and bonus Crystals.</p>
+            <span class="game-tag">Coming soon</span>
+          </article>
+
+          <article class="game-card">
+            <span class="game-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
+                <path d="M5 5h14v14H5z" stroke="currentColor" stroke-width="1.3" />
+                <path d="M8 15.5 11 11l2.5 3L16.5 8.5" stroke="currentColor" stroke-width="1.3"
+                  stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+            <h3 class="game-title">Math Challenge</h3>
+            <p class="game-copy">Solve streaks against the clock to bank more Crystals.</p>
+            <span class="game-tag">Coming soon</span>
+          </article>
+
+          <article class="game-card">
+            <span class="game-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
+                <path d="M6 10V7l6-3 6 3v3l-2 1v7H8v-7z" stroke="currentColor"
+                  stroke-width="1.3" stroke-linejoin="round" />
+                <path d="M10 14h4" stroke="currentColor" stroke-width="1.3"
+                  stroke-linecap="round" />
+              </svg>
+            </span>
+            <h3 class="game-title">Random Auction</h3>
+            <p class="game-copy">Bid on a mystery skin before the timer runs out.</p>
+            <span class="game-tag">Coming soon</span>
+          </article>
         </div>
       </section>
     </div>

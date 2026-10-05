@@ -13,8 +13,10 @@
      08  Card grid (skin cards + skeleton)
      09  Empty state
      10  Footer
-     11  Responsive
-     12  Reduced motion
+     11  Games
+     12  Skin detail modal
+     13  Responsive
+     14  Reduced motion
    ========================================================================= */
 
 /* ==========================================================================
@@ -480,7 +482,22 @@ a {
     linear-gradient(160deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
 }
 
+/* Real CDN artwork fills the thumb; the glyph is only a fallback. */
+.skin-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 8%;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.55));
+  transition: transform var(--dur-slow) var(--ease);
+}
+
+.skin-card:hover .skin-img {
+  transform: translateY(-4px) scale(1.045);
+}
+
 .skin-glyph {
+  display: none;
   width: 46%;
   max-width: 96px;
   height: auto;
@@ -488,6 +505,10 @@ a {
   opacity: 0.5;
   filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.5));
   transition: transform var(--dur-slow) var(--ease), opacity var(--dur) var(--ease);
+}
+
+.skin-thumb.is-fallback .skin-glyph {
+  display: block;
 }
 
 .skin-card:hover .skin-glyph {
@@ -706,7 +727,297 @@ a {
 }
 
 /* ==========================================================================
-   11  RESPONSIVE
+   11  GAMES (structure only)
+   ========================================================================== */
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.1rem;
+}
+
+.game-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.6rem 1.4rem;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  overflow: hidden;
+  transition: transform var(--dur-slow) var(--ease), border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease), box-shadow var(--dur-slow) var(--ease);
+}
+
+.game-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    120% 90% at 80% 0%,
+    var(--accent-soft),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
+  pointer-events: none;
+}
+
+.game-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--line-accent);
+  background: var(--bg-card-hover);
+  box-shadow: 0 24px 50px -30px rgba(0, 0, 0, 0.85), 0 0 30px -18px var(--accent-glow);
+}
+
+.game-card:hover::after {
+  opacity: 1;
+}
+
+.game-mark {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 0.5rem;
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--line-accent);
+}
+
+.game-title {
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--text-hi);
+}
+
+.game-copy {
+  font-size: 0.86rem;
+  color: var(--text-mid);
+  max-width: 40ch;
+}
+
+.game-tag {
+  align-self: flex-start;
+  margin-top: 0.6rem;
+  padding: 0.24rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-faint);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+/* ==========================================================================
+   12  SKIN DETAIL MODAL
+   ========================================================================== */
+body.modal-open {
+  overflow: hidden;
+}
+
+.modal {
+  --rarity: var(--accent);
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 4vw, 2.5rem);
+}
+
+.modal[hidden] {
+  display: none;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 5, 7, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 0.26s var(--ease);
+}
+
+.modal.is-open .modal-backdrop {
+  opacity: 1;
+}
+
+.modal-dialog {
+  position: relative;
+  width: min(760px, 100%);
+  max-height: min(86vh, 640px);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+  box-shadow:
+    0 40px 90px -40px rgba(0, 0, 0, 0.95),
+    0 0 0 1px color-mix(in srgb, var(--rarity) 16%, transparent);
+  opacity: 0;
+  transform: translateY(16px) scale(0.98);
+  transition: opacity 0.26s var(--ease), transform 0.26s var(--ease);
+}
+
+.modal.is-open .modal-dialog {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: var(--text-mid);
+  border: 1px solid var(--line-faint);
+  background: rgba(10, 10, 12, 0.6);
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease);
+}
+
+.modal-close:hover {
+  color: var(--text-hi);
+  border-color: var(--line-soft);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.modal-media {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 240px;
+  border-right: 1px solid var(--line-faint);
+  background:
+    radial-gradient(
+      120% 90% at 50% 0%,
+      color-mix(in srgb, var(--rarity) 16%, transparent),
+      transparent 62%
+    ),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012));
+}
+
+.modal-rarity-bar {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--rarity) 80%, transparent),
+    color-mix(in srgb, var(--rarity) 26%, transparent)
+  );
+}
+
+.modal-img {
+  width: 100%;
+  height: 100%;
+  max-height: 340px;
+  object-fit: contain;
+  padding: 14%;
+  filter: drop-shadow(0 16px 34px rgba(0, 0, 0, 0.6));
+}
+
+.modal-media-fallback {
+  display: none;
+  color: var(--text-mid);
+}
+
+.modal-media.is-fallback .modal-img {
+  display: none;
+}
+
+.modal-media.is-fallback .modal-media-fallback {
+  display: block;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(1.5rem, 3vw, 2.1rem);
+  overflow-y: auto;
+}
+
+.modal-rarity {
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--rarity) 82%, var(--text-mid));
+}
+
+.modal-title {
+  margin-top: 0.4rem;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  color: var(--text-hi);
+}
+
+.modal-condition {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--text-low);
+}
+
+.modal-desc {
+  margin-top: 1.15rem;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--text-mid);
+}
+
+.modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 1.75rem;
+}
+
+.modal-price-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-price-label {
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.modal-price {
+  font-size: 1.35rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-hi);
+}
+
+.modal-cta {
+  margin-top: 0;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.modal-cta:hover {
+  transform: none;
+  border-color: var(--line-soft);
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: none;
+}
+
+/* ==========================================================================
+   13  RESPONSIVE
    ========================================================================== */
 @media (max-width: 860px) {
   .header-inner {
@@ -733,6 +1044,25 @@ a {
   }
 }
 
+@media (max-width: 720px) {
+  .modal-dialog {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+
+  .modal-media {
+    min-height: 200px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line-faint);
+  }
+
+  .modal-img {
+    max-height: 220px;
+    padding: 10%;
+  }
+}
+
 @media (max-width: 520px) {
   body {
     font-size: 14px;
@@ -741,6 +1071,10 @@ a {
   .card-grid {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 0.85rem;
+  }
+
+  .game-grid {
+    grid-template-columns: 1fr;
   }
 
   .view-head {
@@ -754,7 +1088,7 @@ a {
 }
 
 /* ==========================================================================
-   12  REDUCED MOTION
+   14  REDUCED MOTION
    ========================================================================== */
 @media (prefers-reduced-motion: reduce) {
   *,

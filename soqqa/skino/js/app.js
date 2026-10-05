@@ -1,12 +1,15 @@
 /* ============================================================================
    SKINO — app shell
-   Navigation between Market and Inventory, plus mock market rendering.
-   No filters, purchase logic or detail views yet.
+   View navigation (Market / Inventory / Games), the Crystal balance readout,
+   market rendering and the skin detail modal. Mini-game logic is not wired up
+   yet — the Games view is structural only.
    ========================================================================= */
 
-import { SKINS, renderMarket } from './skins.js';
+import { SKINS, renderMarket, getSkinById } from './skins.js';
+import { getCrystals, formatCrystals, onCrystalsChange } from './crystals.js';
+import { openSkinModal } from './skinModal.js';
 
-const VIEWS = ['market', 'inventory'];
+const VIEWS = ['market', 'inventory', 'games'];
 const TRANSITION_MS = 500;
 
 const views = new Map(
@@ -101,6 +104,17 @@ if (document.fonts?.ready) {
   });
 }
 
+/* --------------------------------------------------------- Crystal balance */
+
+const balanceEl = document.querySelector('[data-balance]');
+
+function renderBalance(value = getCrystals()) {
+  if (balanceEl) balanceEl.textContent = formatCrystals(value);
+}
+
+renderBalance();
+onCrystalsChange(renderBalance);
+
 /* ------------------------------------------------------- market rendering */
 
 const marketGrid = document.querySelector('[data-market-grid]');
@@ -111,5 +125,24 @@ renderMarket(marketGrid, SKINS);
 if (marketCount) {
   marketCount.textContent = `${SKINS.length} listings`;
 }
+
+/* Clicking a card (or activating it with the keyboard) opens the detail modal. */
+function cardSkin(event) {
+  const card = event.target.closest('.skin-card');
+  return card ? getSkinById(card.dataset.skinId) : null;
+}
+
+marketGrid?.addEventListener('click', (event) => {
+  const skin = cardSkin(event);
+  if (skin) openSkinModal(skin);
+});
+
+marketGrid?.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  const skin = cardSkin(event);
+  if (!skin) return;
+  event.preventDefault();
+  openSkinModal(skin);
+});
 
 syncTriggers(current);
