@@ -107,8 +107,11 @@ export function formatPrice(value) {
   return `${formatCrystals(value)} ◆`;
 }
 
-/** Build a single skin card element. Clicking it opens the detail modal. */
-export function createSkinCard(skin) {
+/**
+ * Build a single skin card element. Clicking it opens the detail modal.
+ * Pass `qty > 1` to show an ownership badge (used by the inventory view).
+ */
+export function createSkinCard(skin, { qty = 0 } = {}) {
   const card = document.createElement('article');
   card.className = 'skin-card';
   card.dataset.skinId = skin.id;
@@ -152,6 +155,14 @@ export function createSkinCard(skin) {
   glyph.append(path);
 
   thumb.append(img, glyph);
+
+  if (qty > 1) {
+    const badge = document.createElement('span');
+    badge.className = 'skin-qty';
+    badge.textContent = `×${qty}`;
+    badge.setAttribute('aria-label', `${qty} owned`);
+    thumb.append(badge);
+  }
 
   const body = document.createElement('div');
   body.className = 'skin-body';

@@ -6,9 +6,13 @@
    ========================================================================= */
 
 import { RARITIES, formatPrice } from './skins.js';
+import { addToInventory, ownedCount, onInventoryChange } from './inventory.js';
+import { getCrystals, spendCrystals, onCrystalsChange } from './crystals.js';
+import { showToast } from './toast.js';
 
 let root = null;
 let lastFocused = null;
+let currentSkin = null;
 
 function build() {
   const wrap = document.createElement('div');
@@ -45,10 +49,10 @@ function build() {
           <div class="modal-price-block">
             <span class="modal-price-label">Price</span>
             <span class="modal-price" data-modal-price></span>
+            <span class="modal-owned" data-modal-owned></span>
           </div>
-          <button class="btn btn-ghost modal-cta" type="button" disabled
-            title="Purchasing arrives in a later update">
-            Coming soon
+          <button class="btn btn-primary modal-cta" type="button" data-modal-buy>
+            Buy
           </button>
         </div>
       </div>
@@ -56,10 +60,35 @@ function build() {
 
   wrap.addEventListener('click', (event) => {
     if (event.target.closest('[data-modal-close]')) closeSkinModal();
+    if (event.target.closest('[data-modal-buy]')) buyCurrent();
   });
+
+  // Keep the modal's owned/affordability state live while it is open.
+  onInventoryChange(() => syncBuy());
+  onCrystalsChange(() => syncBuy());
 
   document.body.append(wrap);
   return wrap;
+}
+
+function syncBuy() {
+  if (!root || !currentSkin) return;
+  root.querySelector('[data-modal-owned]').textContent =
+    ownedCount(currentSkin.id) > 0 ? `Owned: ${ownedCount(currentSkin.id)}` : '';
+
+  const btn = root.querySelector('[data-modal-buy]');
+  btn.textContent = `Buy · ${formatPrice(currentSkin.price)}`;
+  btn.classList.toggle('is-short', getCrystals() < currentSkin.price);
+}
+
+function buyCurrent() {
+  if (!currentSkin) return;
+  if (!spendCrystals(currentSkin.price)) {
+    showToast('Not enough Crystals for this skin', 'error');
+    return;
+  }
+  addToInventory(currentSkin.id);
+  showToast(`Added ${currentSkin.weapon} | ${currentSkin.finish} to inventory`, 'success');
 }
 
 function onKeydown(event) {
@@ -74,6 +103,7 @@ function ensureRoot() {
 export function openSkinModal(skin) {
   if (!skin) return;
   const modal = ensureRoot();
+  currentSkin = skin;
 
   const img = modal.querySelector('.modal-img');
   const fallback = modal.querySelector('.modal-media');
@@ -91,6 +121,7 @@ export function openSkinModal(skin) {
   modal.querySelector('[data-modal-condition]').textContent = skin.condition;
   modal.querySelector('[data-modal-desc]').textContent = skin.description;
   modal.querySelector('[data-modal-price]').textContent = formatPrice(skin.price);
+  syncBuy();
 
   lastFocused = document.activeElement;
   modal.hidden = false;

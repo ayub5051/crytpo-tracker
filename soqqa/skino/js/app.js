@@ -1,13 +1,15 @@
 /* ============================================================================
    SKINO — app shell
    View navigation (Market / Inventory / Games), the Crystal balance readout,
-   market rendering and the skin detail modal. Mini-game logic is not wired up
-   yet — the Games view is structural only.
+   market rendering, the inventory view, the skin detail modal and the Wheel.
    ========================================================================= */
 
-import { SKINS, renderMarket, getSkinById } from './skins.js';
+import { getSkinById } from './skins.js';
 import { getCrystals, formatCrystals, onCrystalsChange } from './crystals.js';
 import { openSkinModal } from './skinModal.js';
+import { initMarketFilters } from './marketFilters.js';
+import { initInventoryView } from './inventoryView.js';
+import { initWheel } from './wheel.js';
 
 const VIEWS = ['market', 'inventory', 'games'];
 const TRANSITION_MS = 500;
@@ -16,7 +18,6 @@ const views = new Map(
   VIEWS.map((name) => [name, document.querySelector(`[data-view="${name}"]`)])
 );
 
-const triggers = Array.from(document.querySelectorAll('[data-view-target]'));
 const navLinks = Array.from(document.querySelectorAll('.primary-nav .nav-link'));
 const indicator = document.querySelector('.nav-indicator');
 const header = document.getElementById('siteHeader');
@@ -82,8 +83,10 @@ function switchView(target) {
 
 /* ---------------------------------------------------------------- events */
 
-triggers.forEach((el) => {
-  el.addEventListener('click', () => switchView(el.dataset.viewTarget));
+// Delegated so triggers created later (empty states, etc.) still work.
+document.addEventListener('click', (event) => {
+  const trigger = event.target.closest('[data-view-target]');
+  if (trigger) switchView(trigger.dataset.viewTarget);
 });
 
 window.addEventListener('resize', () => {
@@ -115,16 +118,13 @@ function renderBalance(value = getCrystals()) {
 renderBalance();
 onCrystalsChange(renderBalance);
 
-/* ------------------------------------------------------- market rendering */
+/* ------------------------------------------ market, inventory & mini-games */
 
 const marketGrid = document.querySelector('[data-market-grid]');
-const marketCount = document.querySelector('[data-market-count]');
 
-renderMarket(marketGrid, SKINS);
-
-if (marketCount) {
-  marketCount.textContent = `${SKINS.length} listings`;
-}
+initMarketFilters();
+initInventoryView();
+initWheel();
 
 /* Clicking a card (or activating it with the keyboard) opens the detail modal. */
 function cardSkin(event) {
