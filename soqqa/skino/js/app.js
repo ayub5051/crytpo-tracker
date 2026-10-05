@@ -1,7 +1,8 @@
 /* ============================================================================
    SKINO — app shell
    View navigation (Market / Inventory / Games), the Crystal balance readout,
-   market rendering, the inventory view, the skin detail modal and the Wheel.
+   market rendering, the inventory view, the skin detail modal, the Wheel and
+   Math Challenge mini-games, and the Crystal rewards dialog.
    ========================================================================= */
 
 import { getSkinById } from './skins.js';
@@ -10,6 +11,8 @@ import { openSkinModal } from './skinModal.js';
 import { initMarketFilters } from './marketFilters.js';
 import { initInventoryView } from './inventoryView.js';
 import { initWheel } from './wheel.js';
+import { initMathGame } from './mathGame.js';
+import { initRewards } from './rewards.js';
 
 const VIEWS = ['market', 'inventory', 'games'];
 const TRANSITION_MS = 500;
@@ -125,6 +128,8 @@ const marketGrid = document.querySelector('[data-market-grid]');
 initMarketFilters();
 initInventoryView();
 initWheel();
+initMathGame();
+initRewards();
 
 /* Clicking a card (or activating it with the keyboard) opens the detail modal. */
 function cardSkin(event) {

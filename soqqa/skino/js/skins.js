@@ -98,6 +98,9 @@ export const SKINS = [
 
 const byId = new Map(SKINS.map((skin) => [skin.id, skin]));
 
+/** Fraction of the market price recovered when selling a skin back. */
+export const SELL_RATE = 0.7;
+
 export function getSkinById(id) {
   return byId.get(id) ?? null;
 }
@@ -105,6 +108,11 @@ export function getSkinById(id) {
 /** Crystal-aware price label, e.g. "3,175 ◆". */
 export function formatPrice(value) {
   return `${formatCrystals(value)} ◆`;
+}
+
+/** Crystals returned when a skin is sold (always at least 1). */
+export function sellPrice(skin) {
+  return Math.max(1, Math.round(skin.price * SELL_RATE));
 }
 
 /**

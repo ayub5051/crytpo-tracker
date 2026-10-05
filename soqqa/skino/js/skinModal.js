@@ -5,9 +5,20 @@
    markup stays clean.
    ========================================================================= */
 
-import { RARITIES, formatPrice } from './skins.js';
-import { addToInventory, ownedCount, onInventoryChange } from './inventory.js';
-import { getCrystals, spendCrystals, onCrystalsChange } from './crystals.js';
+import { RARITIES, formatPrice, sellPrice } from './skins.js';
+import {
+  addToInventory,
+  removeFromInventory,
+  ownedCount,
+  onInventoryChange,
+} from './inventory.js';
+import {
+  getCrystals,
+  spendCrystals,
+  addCrystals,
+  formatCrystals,
+  onCrystalsChange,
+} from './crystals.js';
 import { showToast } from './toast.js';
 
 let root = null;
@@ -51,9 +62,14 @@ function build() {
             <span class="modal-price" data-modal-price></span>
             <span class="modal-owned" data-modal-owned></span>
           </div>
-          <button class="btn btn-primary modal-cta" type="button" data-modal-buy>
-            Buy
-          </button>
+          <div class="modal-actions">
+            <button class="btn btn-ghost" type="button" data-modal-sell hidden>
+              Sell
+            </button>
+            <button class="btn btn-primary modal-cta" type="button" data-modal-buy>
+              Buy
+            </button>
+          </div>
         </div>
       </div>
     </div>`;
@@ -61,24 +77,31 @@ function build() {
   wrap.addEventListener('click', (event) => {
     if (event.target.closest('[data-modal-close]')) closeSkinModal();
     if (event.target.closest('[data-modal-buy]')) buyCurrent();
+    if (event.target.closest('[data-modal-sell]')) sellCurrent();
   });
 
   // Keep the modal's owned/affordability state live while it is open.
-  onInventoryChange(() => syncBuy());
-  onCrystalsChange(() => syncBuy());
+  onInventoryChange(() => syncActions());
+  onCrystalsChange(() => syncActions());
 
   document.body.append(wrap);
   return wrap;
 }
 
-function syncBuy() {
+function syncActions() {
   if (!root || !currentSkin) return;
-  root.querySelector('[data-modal-owned]').textContent =
-    ownedCount(currentSkin.id) > 0 ? `Owned: ${ownedCount(currentSkin.id)}` : '';
+  const owned = ownedCount(currentSkin.id);
 
-  const btn = root.querySelector('[data-modal-buy]');
-  btn.textContent = `Buy · ${formatPrice(currentSkin.price)}`;
-  btn.classList.toggle('is-short', getCrystals() < currentSkin.price);
+  root.querySelector('[data-modal-owned]').textContent =
+    owned > 0 ? `Owned: ${owned}` : '';
+
+  const buy = root.querySelector('[data-modal-buy]');
+  buy.textContent = `Buy · ${formatPrice(currentSkin.price)}`;
+  buy.classList.toggle('is-short', getCrystals() < currentSkin.price);
+
+  const sell = root.querySelector('[data-modal-sell]');
+  sell.hidden = owned === 0;
+  sell.textContent = `Sell · ${formatCrystals(sellPrice(currentSkin))} ◆`;
 }
 
 function buyCurrent() {
@@ -89,6 +112,17 @@ function buyCurrent() {
   }
   addToInventory(currentSkin.id);
   showToast(`Added ${currentSkin.weapon} | ${currentSkin.finish} to inventory`, 'success');
+}
+
+function sellCurrent() {
+  if (!currentSkin || ownedCount(currentSkin.id) === 0) return;
+  const gained = sellPrice(currentSkin);
+  removeFromInventory(currentSkin.id, 1);
+  addCrystals(gained);
+  showToast(
+    `Sold ${currentSkin.weapon} | ${currentSkin.finish} for ${formatCrystals(gained)} Crystals`,
+    'success'
+  );
 }
 
 function onKeydown(event) {
@@ -121,7 +155,7 @@ export function openSkinModal(skin) {
   modal.querySelector('[data-modal-condition]').textContent = skin.condition;
   modal.querySelector('[data-modal-desc]').textContent = skin.description;
   modal.querySelector('[data-modal-price]').textContent = formatPrice(skin.price);
-  syncBuy();
+  syncActions();
 
   lastFocused = document.activeElement;
   modal.hidden = false;

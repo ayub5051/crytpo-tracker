@@ -17,8 +17,10 @@
      12  Skin detail modal
      13  Toasts
      14  Wheel
-     15  Responsive
-     16  Reduced motion
+     15  Math Challenge
+     16  Crystal rewards
+     17  Responsive
+     18  Reduced motion
    ========================================================================= */
 
 /* ==========================================================================
@@ -308,6 +310,31 @@ a {
 .balance-currency {
   color: var(--accent);
   margin-right: 1px;
+}
+
+.balance-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.balance-add {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--line-accent);
+  transition: transform var(--dur) var(--ease), filter var(--dur) var(--ease);
+}
+
+.balance-add:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.15);
 }
 
 /* ==========================================================================
@@ -804,6 +831,10 @@ a {
   opacity: 0.55;
 }
 
+.btn[hidden] {
+  display: none;
+}
+
 .btn:active {
   transform: translateY(0);
 }
@@ -1121,6 +1152,17 @@ body.modal-open {
   white-space: nowrap;
 }
 
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.modal-actions .btn {
+  margin-top: 0;
+}
+
 /* ==========================================================================
    13  TOASTS
    ========================================================================== */
@@ -1265,7 +1307,238 @@ body.modal-open {
 }
 
 /* ==========================================================================
-   15  RESPONSIVE
+   15  MATH CHALLENGE
+   ========================================================================== */
+.math-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  padding: clamp(1.25rem, 3vw, 2rem);
+  margin-bottom: 1.6rem;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+}
+
+.math-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.math-problem {
+  min-height: 1.2em;
+  font-size: clamp(2rem, 6vw, 3rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-hi);
+}
+
+.math-answer {
+  display: flex;
+  gap: 0.6rem;
+  width: min(340px, 100%);
+}
+
+.math-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: inherit;
+  font-size: 1.05rem;
+  text-align: center;
+  padding: 0.55rem 0.8rem;
+  color: var(--text-hi);
+  background: rgba(255, 255, 255, 0.028);
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+
+.math-input:focus {
+  outline: none;
+  border-color: var(--line-accent);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.math-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.math-submit {
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+.math-feedback {
+  min-height: 1.2em;
+  font-size: 0.84rem;
+  color: var(--text-low);
+}
+
+.math-feedback.is-right {
+  color: var(--accent);
+}
+
+.math-feedback.is-wrong {
+  color: #f0a2a2;
+}
+
+.math-side {
+  display: flex;
+  flex-direction: column;
+}
+
+.math-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+  margin: 1.2rem 0 0;
+}
+
+.math-stat dt {
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.math-stat dd {
+  margin: 0.15rem 0 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-hi);
+}
+
+.math-start {
+  align-self: flex-start;
+  margin-top: 1.4rem;
+}
+
+/* ==========================================================================
+   16  CRYSTAL REWARDS
+   ========================================================================== */
+.rewards-dialog {
+  width: min(480px, 100%);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.rewards-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: clamp(1.5rem, 3vw, 2rem);
+}
+
+.rewards-body .modal-title {
+  margin-top: 0.5rem;
+}
+
+.rewards-body .modal-desc {
+  margin-top: 0;
+}
+
+.reward-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  margin-top: 0.4rem;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.reward-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-hi);
+}
+
+.reward-note {
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
+  color: var(--text-low);
+}
+
+.reward-action {
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+.reward-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+.rewards-label {
+  margin-top: 0.6rem;
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.reward-packs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.reward-pack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.9rem 0.5rem;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease);
+}
+
+.reward-pack:hover {
+  transform: translateY(-2px);
+  border-color: var(--line-accent);
+  background: var(--accent-soft);
+}
+
+.reward-pack-amount {
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-hi);
+}
+
+.reward-pack-note {
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.rewards-balance {
+  margin-top: 0.2rem;
+  font-size: 0.82rem;
+  color: var(--text-low);
+}
+
+.rewards-balance span {
+  color: var(--text-hi);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   17  RESPONSIVE
    ========================================================================== */
 @media (max-width: 860px) {
   .header-inner {
@@ -1293,11 +1566,13 @@ body.modal-open {
 }
 
 @media (max-width: 720px) {
-  .wheel-panel {
+  .wheel-panel,
+  .math-panel {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .wheel-side {
+  .wheel-side,
+  .math-side {
     align-items: center;
     text-align: center;
   }
@@ -1306,7 +1581,8 @@ body.modal-open {
     margin-inline: auto;
   }
 
-  .wheel-spin {
+  .wheel-spin,
+  .math-start {
     align-self: center;
   }
 
@@ -1357,13 +1633,26 @@ body.modal-open {
     flex-direction: column;
   }
 
+  .reward-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .reward-action {
+    width: 100%;
+  }
+
+  .reward-pack-amount {
+    font-size: 0.82rem;
+  }
+
   .balance-label {
     display: none;
   }
 }
 
 /* ==========================================================================
-   16  REDUCED MOTION
+   18  REDUCED MOTION
    ========================================================================== */
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -5,6 +5,7 @@
 
 import { getSkinById, createSkinCard } from './skins.js';
 import { getInventory, totalItems, onInventoryChange } from './inventory.js';
+import { formatCrystals } from './crystals.js';
 
 const EMPTY_MARKUP = `
   <span class="empty-mark" aria-hidden="true">
@@ -32,7 +33,10 @@ export function initInventoryView() {
 
     if (countEl) {
       const total = totalItems();
-      countEl.textContent = `${total} item${total === 1 ? '' : 's'}`;
+      const value = owned.reduce((sum, { skin, qty }) => sum + skin.price * qty, 0);
+      countEl.textContent = `${total} item${total === 1 ? '' : 's'} · ${formatCrystals(
+        value
+      )} ◆`;
     }
 
     if (owned.length === 0) {
