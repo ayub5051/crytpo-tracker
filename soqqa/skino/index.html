@@ -237,8 +237,14 @@
         </div>
 
         <div class="wheel-panel">
-          <div class="wheel-stage">
+          <div class="wheel-stage" data-wheel-stage>
             <span class="wheel-pointer" aria-hidden="true"></span>
+            <!-- Big-win light bloom — animated purely via CSS, toggled from js/wheel.js -->
+            <div class="wheel-bloom" aria-hidden="true">
+              <span class="wheel-bloom-halo"></span>
+              <span class="wheel-bloom-rays"></span>
+              <span class="wheel-bloom-core"></span>
+            </div>
             <canvas
               class="wheel-canvas"
               data-wheel-canvas
@@ -394,5 +400,8 @@
     <span class="footer-sep" aria-hidden="true">·</span>
     <span>Demo environment — no real transactions</span>
   </footer>
+
+  <!-- Screen-wide glow pulse for the big-win moment (see js/wheel.js) -->
+  <div class="big-win-vignette" aria-hidden="true"></div>
 </body>
 </html>

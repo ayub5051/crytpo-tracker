@@ -98,6 +98,19 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  /* This is an app, not a document: non-editable text should never show an
+     I-beam caret or highlight on drag. Real fields opt back in below. */
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Keep selection (and the I-beam) only where the user actually types. */
+input,
+textarea {
+  cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 h1,
@@ -1271,6 +1284,151 @@ body.modal-open {
   filter: drop-shadow(0 24px 50px rgba(0, 0, 0, 0.55));
 }
 
+/* --- Big-win lighting ---------------------------------------------------
+   A single cinematic burst of light from the wheel centre: a broad halo, a
+   few soft rays and a hot core, all layered over the canvas. The class toggle
+   lives in js/wheel.js; every bit of motion is CSS here, so the spin physics
+   stay untouched. No particles, no confetti — just light that blooms then
+   fades. Duration (2200ms) matches BIG_WIN_MS in wheel.js. */
+.wheel-bloom {
+  position: absolute;
+  inset: 0;
+  z-index: 1; /* above the canvas, below the pointer (z-index: 2) */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s linear;
+}
+
+.wheel-bloom span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0.2);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* Broad radial wash expanding out from the hub. */
+.wheel-bloom-halo {
+  width: 150%;
+  height: 150%;
+  background: radial-gradient(
+    circle,
+    rgba(94, 210, 226, 0.85) 0%,
+    rgba(94, 210, 226, 0.34) 32%,
+    rgba(94, 210, 226, 0.12) 56%,
+    transparent 74%
+  );
+  filter: blur(22px);
+}
+
+/* Light rays, masked into a soft ring so they read as glow, not spokes. */
+.wheel-bloom-rays {
+  width: 190%;
+  height: 190%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(255, 255, 255, 0.5) 0deg 2deg,
+    transparent 2deg 22.5deg
+  );
+  -webkit-mask-image: radial-gradient(circle, transparent 26%, #000 44%, transparent 76%);
+  mask-image: radial-gradient(circle, transparent 26%, #000 44%, transparent 76%);
+  filter: blur(6px) saturate(1.15);
+}
+
+/* Hot centre core for the initial flash. */
+.wheel-bloom-core {
+  width: 62%;
+  height: 62%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(94, 210, 226, 0.9) 24%,
+    transparent 64%
+  );
+  filter: blur(10px);
+}
+
+@keyframes bloom-halo {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.25);
+  }
+  14% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  34% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.5);
+  }
+}
+
+@keyframes bloom-rays {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3) rotate(0deg);
+  }
+  16% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(0.95) rotate(8deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.45) rotate(26deg);
+  }
+}
+
+@keyframes bloom-core {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  8% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+  22% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(1.35);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2);
+  }
+}
+
+/* Only animate while the stage carries the win class. */
+.wheel-stage.big-win-active .wheel-bloom {
+  opacity: 1;
+}
+
+.wheel-stage.big-win-active .wheel-bloom-halo {
+  animation: bloom-halo 2200ms var(--ease) both;
+}
+
+.wheel-stage.big-win-active .wheel-bloom-rays {
+  animation: bloom-rays 2200ms var(--ease) both;
+}
+
+.wheel-stage.big-win-active .wheel-bloom-core {
+  animation: bloom-core 2200ms var(--ease) both;
+}
+
+/* "big" tier (skin prizes / 250+ Crystals) blooms a touch larger and hotter. */
+.wheel-stage[data-win-tier='big'] .wheel-bloom {
+  transform: scale(1.14);
+}
+
+.wheel-stage[data-win-tier='big'] .wheel-bloom-core {
+  filter: blur(8px) brightness(1.25);
+}
+
 .wheel-pointer {
   position: absolute;
   top: -7px;
@@ -1339,6 +1497,41 @@ body.modal-open {
 
 .wheel-result[data-state='lose'] {
   color: var(--text-mid);
+}
+
+/* Screen-wide glow + vignette pulse, timed with the bloom above. */
+.big-win-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 250; /* above content/modal, below toasts (z-index: 300) */
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    circle at 50% 46%,
+    rgba(94, 210, 226, 0.16) 0%,
+    rgba(94, 210, 226, 0.06) 34%,
+    transparent 62%,
+    rgba(0, 0, 0, 0.28) 100%
+  );
+}
+
+@keyframes win-vignette {
+  0% {
+    opacity: 0;
+  }
+  14% {
+    opacity: 0.9;
+  }
+  40% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+body.big-win-active .big-win-vignette {
+  animation: win-vignette 2200ms var(--ease) both;
 }
 
 /* ==========================================================================
@@ -1795,5 +1988,26 @@ body.modal-open {
 
   .skin-card:hover {
     transform: none;
+  }
+
+  /* Big-win effect keeps working, but as a plain fade — no flash, no motion. */
+  @keyframes bloom-fade {
+    0% {
+      opacity: 0;
+    }
+    25% {
+      opacity: 0.5;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .wheel-stage.big-win-active .wheel-bloom-halo,
+  .wheel-stage.big-win-active .wheel-bloom-rays,
+  .wheel-stage.big-win-active .wheel-bloom-core,
+  body.big-win-active .big-win-vignette {
+    animation-name: bloom-fade !important;
+    animation-duration: 1600ms !important;
   }
 }

@@ -112,16 +112,33 @@ function draw() {
 
   ctx.restore();
 
-  // Labels orbit with the wheel but stay upright so they read at any rotation.
+  /* Segment labels are drawn RADIALLY, along each wedge's centre line, instead
+     of sitting upright at a fixed point. A radial string stays on the wedge's
+     axis, so its run can never spill into a neighbouring segment — at any
+     rotation, stopped or spinning. `fillText`'s maxWidth condenses the type
+     rather than overflowing, and the left half is flipped 180° so no label
+     ever reads upside-down. Label placement only: segment drawing and the
+     spin/rotation maths above are untouched. */
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
+  const hubR = 46; // keep clear of the centre hub
+  const innerR = hubR + 34; // start of the readable ring
+  const outerR = r - 30; // stay inside the rim
+  const labelRadius = (innerR + outerR) / 2;
+  const maxLabelWidth = outerR - innerR;
+  // A wedge is narrowest at innerR, so that bounds the usable text height.
+  const maxFont = Math.max(11, Math.min(24, innerR * slice * 0.86));
   SEGMENTS.forEach((seg, i) => {
-    const world = i * slice + slice / 2 + rotation;
+    const mid = i * slice + slice / 2 + rotation;
+    // Long labels scale down gracefully so they stay legible and contained.
+    const size = Math.max(10, Math.min(maxFont, (maxFont * 8) / Math.max(8, seg.label.length)));
     ctx.save();
-    ctx.translate(Math.cos(world) * r * 0.66, Math.sin(world) * r * 0.66);
+    ctx.rotate(mid); // +x now points along this wedge's centre line
+    ctx.translate(labelRadius, 0);
+    if (Math.cos(mid) < 0) ctx.rotate(Math.PI); // left half reads forwards
     ctx.fillStyle = seg.accent ? '#5ed2e2' : '#a2a5ad';
-    ctx.font = `600 ${seg.label.length > 8 ? 21 : 26}px Inter, sans-serif`;
-    ctx.fillText(seg.label, 0, 0);
+    ctx.font = `600 ${size}px Inter, sans-serif`;
+    ctx.fillText(seg.label, 0, 0, maxLabelWidth);
     ctx.restore();
   });
 
@@ -169,12 +186,42 @@ function setResult(text, variant = '') {
   resultEl.dataset.state = variant;
 }
 
+/* --------------------------------------------------------------------------
+   Big-win bloom
+   A ~2.2s cinematic burst of light from the wheel centre. This only toggles a
+   class — the animation itself lives in style.css — so the spin physics are
+   never involved. Removed again on a timer when the effect has finished.
+   -------------------------------------------------------------------------- */
+const BIG_WIN_MS = 2200;
+let bigWinTimer = 0;
+
+function playBigWin(tier = 'normal') {
+  const stage = canvas?.closest('.wheel-stage');
+  if (!stage) return;
+  stage.classList.remove('big-win-active');
+  void stage.offsetWidth; // force reflow so back-to-back wins restart the bloom
+  stage.dataset.winTier = tier;
+  stage.classList.add('big-win-active');
+  document.body.classList.add('big-win-active');
+  window.clearTimeout(bigWinTimer);
+  bigWinTimer = window.setTimeout(endBigWin, reducedMotion ? 1600 : BIG_WIN_MS);
+}
+
+function endBigWin() {
+  document.querySelectorAll('.wheel-stage.big-win-active').forEach((el) => {
+    el.classList.remove('big-win-active');
+    delete el.dataset.winTier;
+  });
+  document.body.classList.remove('big-win-active');
+}
+
 function award(seg) {
   if (seg.kind === 'crystals') {
     addCrystals(seg.value);
     record({ type: 'wheel', label: 'Wheel win', amount: seg.value });
     setResult(`Won ${formatCrystals(seg.value)} Crystals`, 'win');
     showToast(`+${formatCrystals(seg.value)} Crystals from the Wheel`, 'success');
+    playBigWin(seg.value >= 250 ? 'big' : 'normal');
   } else if (seg.kind === 'skin') {
     const skin = getSkinById(seg.skinId);
     addToInventory(seg.skinId);
@@ -186,6 +233,7 @@ function award(seg) {
     });
     setResult(`Won ${skin.weapon} | ${skin.finish}`, 'win');
     showToast(`Wheel win: ${skin.weapon} | ${skin.finish}!`, 'success');
+    playBigWin('big');
   } else {
     setResult('No win this time — spin again', 'lose');
   }
