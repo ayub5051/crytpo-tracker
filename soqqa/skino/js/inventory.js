@@ -72,6 +72,26 @@ export function removeFromInventory(id, qty = 1) {
   emit();
 }
 
+/**
+ * Remove several stacks at once (used by "sell duplicates"), notifying
+ * subscribers a single time.
+ * @param {{id:string, qty:number}[]} removals
+ */
+export function removeMany(removals) {
+  let changed = false;
+  removals.forEach(({ id, qty }) => {
+    const n = Math.round(qty);
+    if (!items[id] || n <= 0) return;
+    const next = items[id] - n;
+    if (next > 0) items[id] = next;
+    else delete items[id];
+    changed = true;
+  });
+  if (!changed) return;
+  write();
+  emit();
+}
+
 export function clearInventory() {
   items = {};
   write();

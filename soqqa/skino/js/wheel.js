@@ -8,6 +8,7 @@
 import { getSkinById } from './skins.js';
 import { spendCrystals, addCrystals, getCrystals, formatCrystals } from './crystals.js';
 import { addToInventory } from './inventory.js';
+import { record } from './ledger.js';
 import { showToast } from './toast.js';
 
 export const SPIN_COST = 100;
@@ -171,11 +172,18 @@ function setResult(text, variant = '') {
 function award(seg) {
   if (seg.kind === 'crystals') {
     addCrystals(seg.value);
+    record({ type: 'wheel', label: 'Wheel win', amount: seg.value });
     setResult(`Won ${formatCrystals(seg.value)} Crystals`, 'win');
     showToast(`+${formatCrystals(seg.value)} Crystals from the Wheel`, 'success');
   } else if (seg.kind === 'skin') {
     const skin = getSkinById(seg.skinId);
     addToInventory(seg.skinId);
+    record({
+      type: 'wheel',
+      label: `Wheel win: ${skin.weapon} | ${skin.finish}`,
+      amount: 0,
+      skinId: seg.skinId,
+    });
     setResult(`Won ${skin.weapon} | ${skin.finish}`, 'win');
     showToast(`Wheel win: ${skin.weapon} | ${skin.finish}!`, 'success');
   } else {
@@ -193,6 +201,7 @@ function spin() {
   spinning = true;
   if (spinButton) spinButton.disabled = true;
   setResult('Spinning…', 'spin');
+  record({ type: 'wheel', label: 'Wheel spin', amount: -SPIN_COST });
 
   const index = pickWeighted();
   const segment = SEGMENTS[index];

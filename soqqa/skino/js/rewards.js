@@ -5,6 +5,7 @@
    ========================================================================= */
 
 import { addCrystals, getCrystals, formatCrystals, onCrystalsChange } from './crystals.js';
+import { record } from './ledger.js';
 import { showToast } from './toast.js';
 
 export const DAILY_BONUS = 250;
@@ -128,6 +129,7 @@ function build() {
     if (event.target.closest('[data-daily-claim]')) {
       const gained = claimDaily();
       if (gained > 0) {
+        record({ type: 'daily', label: 'Daily bonus', amount: gained });
         showToast(`Daily bonus claimed: +${formatCrystals(gained)} Crystals`, 'success');
         refresh();
       }
@@ -136,6 +138,7 @@ function build() {
     if (pack) {
       const amount = Number(pack.dataset.topup);
       addCrystals(amount);
+      record({ type: 'topup', label: `Top-up +${formatCrystals(amount)}`, amount });
       showToast(`Topped up +${formatCrystals(amount)} Crystals`, 'success');
     }
   });

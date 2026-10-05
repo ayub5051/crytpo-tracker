@@ -76,6 +76,15 @@
         >
           Games
         </button>
+        <button
+          class="nav-link"
+          type="button"
+          data-view-target="history"
+          aria-controls="view-history"
+          aria-selected="false"
+        >
+          History
+        </button>
         <span class="nav-indicator" aria-hidden="true"></span>
       </nav>
 
@@ -185,6 +194,28 @@
           <span class="view-count" data-inventory-count>0 items</span>
         </div>
 
+        <div class="market-toolbar">
+          <label class="field">
+            <span class="field-label">Sort</span>
+            <select data-inventory-sort>
+              <option value="value-desc">Value · high to low</option>
+              <option value="value-asc">Value · low to high</option>
+              <option value="qty-desc">Quantity</option>
+              <option value="name">Name</option>
+            </select>
+          </label>
+          <div class="inventory-actions">
+            <button
+              class="btn btn-ghost"
+              type="button"
+              data-inventory-sell-dupes
+              disabled
+            >
+              No duplicates to sell
+            </button>
+          </div>
+        </div>
+
         <!-- Rendered in js/inventoryView.js -->
         <div class="card-grid" data-inventory-grid aria-live="polite"></div>
       </section>
@@ -202,7 +233,7 @@
             <h2 class="view-title">Games</h2>
             <p class="view-subtitle">Spend Crystals, win skins and more Crystals.</p>
           </div>
-          <span class="view-count">2 of 3 live</span>
+          <span class="view-count">3 live games</span>
         </div>
 
         <div class="wheel-panel">
@@ -287,21 +318,73 @@
           </div>
         </div>
 
-        <div class="game-grid">
-          <article class="game-card">
-            <span class="game-mark" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
-                <path d="M6 10V7l6-3 6 3v3l-2 1v7H8v-7z" stroke="currentColor"
-                  stroke-width="1.3" stroke-linejoin="round" />
-                <path d="M10 14h4" stroke="currentColor" stroke-width="1.3"
-                  stroke-linecap="round" />
-              </svg>
-            </span>
-            <h3 class="game-title">Random Auction</h3>
-            <p class="game-copy">Bid on a mystery skin before the timer runs out.</p>
-            <span class="game-tag">Coming soon</span>
-          </article>
+        <div class="auction-panel" data-auction-panel>
+          <div class="auction-stage">
+            <div class="auction-lot">
+              <img class="auction-img" data-auction-img alt="" />
+            </div>
+            <p class="auction-rarity" data-auction-rarity>—</p>
+            <p class="auction-name" data-auction-name>Mystery lot</p>
+          </div>
+          <div class="auction-side">
+            <p class="wheel-eyebrow">Random Auction</p>
+            <h3 class="wheel-title">Bid on the mystery</h3>
+            <p class="wheel-copy">
+              A hidden skin goes under the hammer. Outbid the house before the clock
+              runs out — win the lot and pay only your final bid.
+            </p>
+            <dl class="math-stats">
+              <div class="math-stat">
+                <dt>Current bid</dt>
+                <dd data-auction-bid>—</dd>
+              </div>
+              <div class="math-stat">
+                <dt>Leader</dt>
+                <dd data-auction-leader>—</dd>
+              </div>
+              <div class="math-stat">
+                <dt>Time</dt>
+                <dd data-auction-time>—</dd>
+              </div>
+            </dl>
+            <div class="auction-actions">
+              <button class="btn btn-primary" type="button" data-auction-start>
+                Start auction
+              </button>
+              <button class="btn btn-ghost" type="button" data-auction-place disabled>
+                Bid
+              </button>
+            </div>
+            <p class="wheel-result" data-auction-result data-state="">
+              Start an auction to bid.
+            </p>
+          </div>
         </div>
+      </section>
+
+      <!-- History -->
+      <section
+        class="view"
+        id="view-history"
+        data-view="history"
+        aria-label="History"
+        hidden
+      >
+        <div class="view-head">
+          <div>
+            <h2 class="view-title">History</h2>
+            <p class="view-subtitle">Every Crystal and skin movement, newest first.</p>
+          </div>
+          <div class="view-head-actions">
+            <span class="view-count" data-history-count>0 entries</span>
+            <button class="btn btn-ghost" type="button" data-history-clear disabled>
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <!-- Rendered in js/historyView.js -->
+        <ul class="history-list" data-history-list aria-live="polite"></ul>
       </section>
     </div>
   </main>

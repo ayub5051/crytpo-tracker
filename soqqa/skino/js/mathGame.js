@@ -5,6 +5,7 @@
    ========================================================================= */
 
 import { addCrystals, formatCrystals } from './crystals.js';
+import { record } from './ledger.js';
 import { showToast } from './toast.js';
 
 export const ROUND_SECONDS = 30;
@@ -123,6 +124,11 @@ function end() {
       : 'Time! No correct answers this round.';
 
   if (earned > 0) {
+    record({
+      type: 'math',
+      label: `Math Challenge — ${score} correct`,
+      amount: earned,
+    });
     showToast(`Math Challenge: +${formatCrystals(earned)} Crystals`, 'success');
   }
 }

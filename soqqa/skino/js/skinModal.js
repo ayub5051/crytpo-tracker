@@ -19,6 +19,7 @@ import {
   formatCrystals,
   onCrystalsChange,
 } from './crystals.js';
+import { record } from './ledger.js';
 import { showToast } from './toast.js';
 
 let root = null;
@@ -111,6 +112,12 @@ function buyCurrent() {
     return;
   }
   addToInventory(currentSkin.id);
+  record({
+    type: 'purchase',
+    label: `Bought ${currentSkin.weapon} | ${currentSkin.finish}`,
+    amount: -currentSkin.price,
+    skinId: currentSkin.id,
+  });
   showToast(`Added ${currentSkin.weapon} | ${currentSkin.finish} to inventory`, 'success');
 }
 
@@ -119,6 +126,12 @@ function sellCurrent() {
   const gained = sellPrice(currentSkin);
   removeFromInventory(currentSkin.id, 1);
   addCrystals(gained);
+  record({
+    type: 'sale',
+    label: `Sold ${currentSkin.weapon} | ${currentSkin.finish}`,
+    amount: gained,
+    skinId: currentSkin.id,
+  });
   showToast(
     `Sold ${currentSkin.weapon} | ${currentSkin.finish} for ${formatCrystals(gained)} Crystals`,
     'success'

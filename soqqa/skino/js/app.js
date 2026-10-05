@@ -1,8 +1,10 @@
 /* ============================================================================
    SKINO — app shell
-   View navigation (Market / Inventory / Games), the Crystal balance readout,
-   market rendering, the inventory view, the skin detail modal, the Wheel and
-   Math Challenge mini-games, and the Crystal rewards dialog.
+   View navigation (Market / Inventory / Games / History), the Crystal balance
+   readout,
+   market rendering, the inventory view, the skin detail modal, the Wheel,
+   Math Challenge and Random Auction mini-games, the Crystal rewards dialog and
+   the transaction history.
    ========================================================================= */
 
 import { getSkinById } from './skins.js';
@@ -12,9 +14,11 @@ import { initMarketFilters } from './marketFilters.js';
 import { initInventoryView } from './inventoryView.js';
 import { initWheel } from './wheel.js';
 import { initMathGame } from './mathGame.js';
+import { initAuction } from './auction.js';
 import { initRewards } from './rewards.js';
+import { initHistoryView } from './historyView.js';
 
-const VIEWS = ['market', 'inventory', 'games'];
+const VIEWS = ['market', 'inventory', 'games', 'history'];
 const TRANSITION_MS = 500;
 
 const views = new Map(
@@ -129,7 +133,9 @@ initMarketFilters();
 initInventoryView();
 initWheel();
 initMathGame();
+initAuction();
 initRewards();
+initHistoryView();
 
 /* Clicking a card (or activating it with the keyboard) opens the detail modal. */
 function cardSkin(event) {
@@ -137,17 +143,25 @@ function cardSkin(event) {
   return card ? getSkinById(card.dataset.skinId) : null;
 }
 
-marketGrid?.addEventListener('click', (event) => {
-  const skin = cardSkin(event);
-  if (skin) openSkinModal(skin);
-});
+function wireCardGrid(grid) {
+  if (!grid) return;
 
-marketGrid?.addEventListener('keydown', (event) => {
-  if (event.key !== 'Enter' && event.key !== ' ') return;
-  const skin = cardSkin(event);
-  if (!skin) return;
-  event.preventDefault();
-  openSkinModal(skin);
-});
+  grid.addEventListener('click', (event) => {
+    const skin = cardSkin(event);
+    if (skin) openSkinModal(skin);
+  });
+
+  grid.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const skin = cardSkin(event);
+    if (!skin) return;
+    event.preventDefault();
+    openSkinModal(skin);
+  });
+}
+
+// Delegated, so re-rendered cards (filters, inventory) stay clickable.
+wireCardGrid(marketGrid);
+wireCardGrid(document.querySelector('[data-inventory-grid]'));
 
 syncTriggers(current);
