@@ -5,6 +5,11 @@ node_modules/
 !.env.example
 *.log
 
+# Build output
+# (the client is static and ships as-is; these guard an accidental bundler run)
+dist/
+build/
+
 # Prisma generated client
 server/generated/
 
