@@ -6,13 +6,14 @@
     { "src": "*.js", "use": "@vercel/static" },
     { "src": "css/*.css", "use": "@vercel/static" },
     { "src": "js/*.js", "use": "@vercel/static" },
+    { "src": "data/*.js", "use": "@vercel/static" },
     { "src": "assets/**", "use": "@vercel/static" },
     { "src": "*.html", "use": "@vercel/static" },
     { "src": "*.webmanifest", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/(.*\\.(css|js|html|webmanifest|png|jpg|jpeg|svg|gif|webp|ico|woff|woff2|ttf|eot))", "dest": "/$1" },
-    { "src": "/(css|js|assets|data|docs|scripts|fonts)/(.*)", "dest": "/$1/$2" },
+    { "src": "/(css|js|data|assets|docs|scripts|fonts)/(.*)", "dest": "/$1/$2" },
     { "src": "/(.*)", "dest": "server/index.js" }
   ]
 }
