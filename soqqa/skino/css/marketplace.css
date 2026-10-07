@@ -1,0 +1,477 @@
+/* ============================================================================
+   BLAZZER — marketplace (Stage 3.2)
+   The enhanced listing grid, the filter drawer, the My-listings panel and the
+   virtual-scroll scaffolding. Only transform/opacity animate; every flourish
+   collapses under prefers-reduced-motion. Colours come from the shared tokens.
+   ========================================================================= */
+
+/* ----------------------------------------------------------- toolbar actions */
+
+.market-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.market-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.market-filter-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.28rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #04222a;
+  background: var(--accent);
+}
+
+/* ------------------------------------------------------------- listing cards */
+
+.listing-card {
+  cursor: pointer;
+  transition: transform 220ms var(--ease-expo-out), border-color 200ms var(--ease-expo-out),
+    background 200ms var(--ease-expo-out), box-shadow 200ms var(--ease-expo-out);
+}
+
+.listing-card:active {
+  transform: scale(0.98);
+}
+
+/* --------------------------------------------------------- rarity identity */
+/* The market grid runs denser than the inventory grid, so each listing gets a
+   slightly stronger rarity read: the shared .skin-card frame stays, and the
+   market layers its own tinted edge, hover glow and artwork seam on top.
+   --rarity is already set inline per card (and reinforced by the data-rarity
+   rules in style.css), so these rules only ever use it — a Covert listing can
+   never borrow a neighbour's colour. */
+
+.listing-card {
+  border-color: color-mix(in srgb, var(--rarity) 52%, transparent);
+}
+
+.listing-card:hover {
+  border-color: color-mix(in srgb, var(--rarity) 78%, transparent);
+  box-shadow:
+    0 26px 54px -30px rgba(0, 0, 0, 0.88),
+    0 0 34px -14px color-mix(in srgb, var(--rarity) 46%, transparent);
+}
+
+/* A rarity-tinted seam under the artwork, so the grid reads as a colour
+   spectrum down the page before the pointer is anywhere near it. */
+.listing-card .skin-thumb::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--rarity) 62%, transparent),
+    transparent
+  );
+  opacity: 0.65;
+  pointer-events: none;
+  transition: opacity 220ms var(--ease-expo-out);
+}
+
+.listing-card:hover .skin-thumb::after {
+  opacity: 1;
+}
+
+.listing-badges {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.listing-badge {
+  padding: 0.16rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.listing-badge.is-new {
+  color: #04222a;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px rgba(94, 210, 226, 0.5), 0 10px 24px -16px var(--accent-glow);
+}
+
+.listing-badge.is-ending {
+  color: #241704;
+  background: #e8c56a;
+}
+
+.listing-stattrak {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  padding: 0.14rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #04222a;
+  background: #f08a3c;
+}
+
+.listing-seller {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--line-faint);
+}
+
+.listing-avatar {
+  flex: 0 0 auto;
+  border-radius: 7px;
+}
+
+.listing-seller-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.listing-seller-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-mid);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.listing-seller-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.listing-stars {
+  position: relative;
+  display: inline-block;
+  font-size: 0.72rem;
+  line-height: 1;
+  letter-spacing: 1px;
+}
+
+.listing-stars-base {
+  color: rgba(255, 255, 255, 0.16);
+}
+
+.listing-stars-fill {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  color: #e8c56a;
+  white-space: nowrap;
+}
+
+.listing-rating-num {
+  font-size: 0.68rem;
+  color: var(--text-low);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------- virtual scrolling */
+
+.card-grid.is-virtual {
+  position: relative;
+  grid-auto-rows: 320px;
+  align-items: stretch;
+}
+
+.market-spacer {
+  grid-column: 1 / -1;
+  pointer-events: none;
+}
+
+.market-probe {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------- filter drawer */
+
+.market-filters {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 1.4rem;
+  overflow-y: auto;
+  border: 1px solid var(--line-soft);
+  background: var(--bg-raised);
+  box-shadow: 0 30px 80px -40px rgba(0, 0, 0, 0.9);
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: transform 420ms var(--ease-expo-out), opacity 320ms var(--ease-expo-out),
+    visibility 0s linear 420ms;
+}
+
+/* Desktop: a sidebar that slides in from the right. */
+@media (min-width: 721px) {
+  .market-filters {
+    top: 0;
+    right: 0;
+    width: min(380px, 94vw);
+    height: 100dvh;
+    transform: translateX(100%);
+  }
+}
+
+/* Mobile: a bottom sheet. */
+@media (max-width: 720px) {
+  .market-filters {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: 84dvh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    transform: translateY(100%);
+  }
+}
+
+.market-filters.is-open {
+  transform: translate(0, 0);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: transform 420ms var(--ease-expo-out), opacity 320ms var(--ease-expo-out),
+    visibility 0s;
+}
+
+.mf-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mf-title {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--text-hi);
+}
+
+.mf-close {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--line-soft);
+  background: transparent;
+  color: var(--text-mid);
+  cursor: pointer;
+}
+
+.mf-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.mf-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.mf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.mf-chip {
+  padding: 0.34rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-mid);
+  border: 1px solid var(--line-soft);
+  background: transparent;
+  cursor: pointer;
+  transition: transform 180ms var(--ease-expo-out), border-color 180ms var(--ease-expo-out),
+    background 180ms var(--ease-expo-out), color 180ms var(--ease-expo-out);
+}
+
+.mf-chip:hover {
+  color: var(--text-hi);
+  border-color: var(--line-accent);
+}
+
+.mf-chip.is-active {
+  color: var(--text-hi);
+  border-color: color-mix(in srgb, var(--chip, var(--accent)) 60%, transparent);
+  background: color-mix(in srgb, var(--chip, var(--accent)) 16%, transparent);
+}
+
+.mf-chip:active {
+  transform: scale(0.96);
+}
+
+.mf-range {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mf-range input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.mf-range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.76rem;
+  color: var(--text-mid);
+  font-variant-numeric: tabular-nums;
+}
+
+.mf-clear {
+  align-self: flex-start;
+  margin-top: 0.2rem;
+}
+
+/* ------------------------------------------------------------- my listings */
+
+.market-my-listings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+}
+
+.mine-card {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem 0.8rem;
+  padding: 0.6rem;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+}
+
+.mine-thumb {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.mine-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.mine-glyph {
+  color: var(--text-low);
+}
+
+.mine-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.mine-name {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-hi);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mine-sub,
+.mine-ends {
+  font-size: 0.72rem;
+  color: var(--text-low);
+}
+
+.mine-ends {
+  color: #e8c56a;
+}
+
+.mine-price {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.mine-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.mine-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+@media (max-width: 560px) {
+  .mine-card {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .mine-price {
+    grid-column: 2;
+  }
+}
+
+/* --------------------------------------------------------- reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .market-filters,
+  .market-filters.is-open {
+    transition: none;
+  }
+
+  .listing-card,
+  .listing-card .skin-thumb::after,
+  .mf-chip {
+    transition: none;
+  }
+}

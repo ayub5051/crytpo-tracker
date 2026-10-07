@@ -1,10 +1,11 @@
 /* ============================================================================
-   SKINO — skin database + card rendering
+   BLAZZER — skin database + card rendering
    A curated catalogue of real CS2 skins. Prices are denominated in Crystals,
    the single in-app currency (see js/crystals.js), and are illustrative only.
    ========================================================================= */
 
 import { formatCrystals } from './crystals.js';
+import { crystalIcon } from './icons.js';
 
 /**
  * Rarity tiers in ascending order, with the muted palette colour that
@@ -96,6 +97,126 @@ export const SKINS = [
   { id: 'star-m9-bayonet-doppler', weapon: '★ M9 Bayonet', finish: 'Doppler', condition: 'Factory New', rarity: 'Covert', price: 6795, description: 'Polished gemstone pattern with shifting light bands.', image: 'https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf3qr3czxb49KzgL-Kmsj2P7rSnXtU6dd9teTA5475jV2urhcDPzCkfMKLcAE-aV3R-lO5l-e61sfqvZ2fyiBgvikqsXiMyRGw1U1Ja-dm06adSULeWfJvEZCxug' },
 ];
 
+/* ============================================================================
+   Visual signature + pricing
+   Every skin gets two things the market depends on:
+
+     gradient   a unique CSS gradient. The Steam artwork is loaded on top when
+                it is reachable, but the gradient is always painted underneath,
+                so a skin can never render as a generic weapon silhouette.
+     basePrice  a value inside its rarity's price band, so a Covert item can
+                never be listed below a Classified one.
+   ========================================================================= */
+
+/**
+ * The demo price band for each rarity, in Crystals.
+ *
+ * The bands are CONTIGUOUS, never overlapping: each tier's floor is the tier
+ * below it's ceiling. That is what makes the price legible as a rarity signal
+ * — the cheapest Covert item can never undercut the dearest Classified one.
+ */
+export const PRICE_BANDS = {
+  Consumer: [10, 100],
+  Industrial: [100, 300],
+  'Mil-Spec': [300, 1000],
+  Restricted: [1000, 5000],
+  Classified: [5000, 20000],
+  Covert: [20000, 100000],
+  // The catalogue uses "Extraordinary" where the brief says "Contraband".
+  Extraordinary: [100000, 500000],
+  Contraband: [100000, 500000],
+};
+
+/** A stable lowercase key for a rarity, used by `data-rarity` and CSS. */
+export function raritySlug(rarity) {
+  return String(rarity || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+}
+
+/** FNV-1a — stable across reloads, so prices and gradients never shift. */
+function hashOf(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i += 1) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+/** A deterministic price inside the rarity's band (kept to a clean multiple of 5). */
+function priceInBand(skin) {
+  const [low, high] = PRICE_BANDS[skin.rarity] || PRICE_BANDS.Consumer;
+  const t = (hashOf(`${skin.id}:price`) % 997) / 996;
+  const raw = low + (high - low) * t;
+  return Math.max(low, Math.min(high, Math.round(raw / 5) * 5));
+}
+
+/**
+ * One hand-tuned gradient per skin. Every entry is a distinct colour recipe —
+ * no two skins share a hue triple, even when they share a finish on a different
+ * weapon (AK Asiimov ≠ AWP Asiimov ≠ M4A4 Asiimov).
+ */
+export const GRADIENTS = {
+  'ak-47-redline': 'linear-gradient(135deg, #2b0d10 0%, #7a1f24 55%, #e0454a 100%)',
+  'ak-47-asiimov': 'linear-gradient(135deg, #e8e6e0 0%, #cfd0d2 52%, #f07a2a 100%)',
+  'ak-47-fire-serpent': 'linear-gradient(135deg, #12351f 0%, #3f6b2e 55%, #c9a24a 100%)',
+  'ak-47-bloodsport': 'linear-gradient(135deg, #1a0a0e 0%, #c0202f 58%, #f2f2f2 100%)',
+  'ak-47-vulcan': 'linear-gradient(135deg, #f0f0f2 0%, #4a4d52 54%, #2f7fd0 100%)',
+  'ak-47-case-hardened': 'linear-gradient(135deg, #1b2a4a 0%, #b9772a 52%, #7a4bd0 100%)',
+  'ak-47-slate': 'linear-gradient(135deg, #23262b 0%, #3d4249 55%, #6b7280 100%)',
+  'ak-47-nightwish': 'linear-gradient(135deg, #0d2a2e 0%, #1b5a5f 55%, #d4af37 100%)',
+  'awp-asiimov': 'linear-gradient(135deg, #f4f2ec 0%, #e2a45c 55%, #d6571f 100%)',
+  'awp-dragon-lore': 'linear-gradient(135deg, #2a1f0a 0%, #b8860b 52%, #4a7a2a 100%)',
+  'awp-neo-noir': 'linear-gradient(135deg, #0b0b10 0%, #2a1030 52%, #e0218a 100%)',
+  'awp-hyper-beast': 'linear-gradient(135deg, #1a0b2a 0%, #d02090 52%, #20d0c0 100%)',
+  'awp-printstream': 'linear-gradient(135deg, #101012 0%, #9aa0a6 55%, #f5f5f7 100%)',
+  'awp-wildfire': 'linear-gradient(135deg, #1c1207 0%, #c2571a 54%, #f0a13a 100%)',
+  'awp-redline': 'linear-gradient(135deg, #1a0a12 0%, #5a1030 52%, #d0304a 100%)',
+  'm4a4-howl': 'linear-gradient(135deg, #3a0a0a 0%, #b81c1c 55%, #f07a1e 100%)',
+  'm4a4-asiimov': 'linear-gradient(135deg, #ededf0 0%, #f0b060 52%, #c0442a 100%)',
+  'm4a4-the-emperor': 'linear-gradient(135deg, #2a1240 0%, #6a3fbf 55%, #e0b040 100%)',
+  'm4a1-s-cyrex': 'linear-gradient(135deg, #2a2f38 0%, #e8722a 52%, #e8e6e2 100%)',
+  'm4a1-s-hot-rod': 'linear-gradient(135deg, #5a0d12 0%, #e01f2a 55%, #d8dcde 100%)',
+  'm4a1-s-golden-coil': 'linear-gradient(135deg, #14110a 0%, #c9a227 52%, #f0d878 100%)',
+  'm4a1-s-printstream': 'linear-gradient(135deg, #1a1c20 0%, #b6bcc2 54%, #ffffff 100%)',
+  'm4a1-s-blue-phosphor': 'linear-gradient(135deg, #06121f 0%, #1b6fd6 52%, #7fd8ff 100%)',
+  'desert-eagle-blaze': 'linear-gradient(135deg, #1a0d05 0%, #e2620f 55%, #ffb347 100%)',
+  'desert-eagle-printstream': 'linear-gradient(135deg, #141416 0%, #8f959b 55%, #eef0f2 100%)',
+  'desert-eagle-code-red': 'linear-gradient(135deg, #f7f7f9 0%, #dedee2 52%, #d32029 100%)',
+  'usp-s-kill-confirmed': 'linear-gradient(135deg, #1b1b1f 0%, #6e7378 55%, #c8cdd2 100%)',
+  'usp-s-cortex': 'linear-gradient(135deg, #1c1030 0%, #7a3fd0 54%, #e8e2d8 100%)',
+  'usp-s-neo-noir': 'linear-gradient(135deg, #0a0a0f 0%, #3a1240 52%, #ff2e88 100%)',
+  'glock-18-fade': 'linear-gradient(135deg, #2a1046 0%, #a030c0 52%, #f0c040 100%)',
+  'glock-18-water-elemental': 'linear-gradient(135deg, #062a33 0%, #1fa8c0 52%, #e8fbff 100%)',
+  'glock-18-neo-noir': 'linear-gradient(135deg, #100a14 0%, #6a1440 52%, #ff4fb0 100%)',
+  'p250-sand-dune': 'linear-gradient(135deg, #3a352a 0%, #8a7c5a 55%, #c9b98a 100%)',
+  'mp9-hot-rod': 'linear-gradient(135deg, #4a0d10 0%, #c81f26 55%, #d0d4d6 100%)',
+  'mp9-hydra': 'linear-gradient(135deg, #08240f 0%, #1e8f3a 52%, #d4af37 100%)',
+  'star-karambit-doppler': 'linear-gradient(135deg, #08111f 0%, #4a2fd0 52%, #20c0d0 100%)',
+  'star-karambit-fade': 'linear-gradient(135deg, #2a0e4a 0%, #b030a0 52%, #ffcf5a 100%)',
+  'star-karambit-tiger-tooth': 'linear-gradient(135deg, #1a1406 0%, #e0a92a 52%, #141414 100%)',
+  'star-butterfly-knife-fade': 'linear-gradient(135deg, #2a0a2a 0%, #d04a9a 52%, #ffd070 100%)',
+  'star-butterfly-knife-tiger-tooth': 'linear-gradient(135deg, #120e04 0%, #c9901f 52%, #2a2a2a 100%)',
+  'star-bayonet-doppler': 'linear-gradient(135deg, #0a1020 0%, #3040c0 52%, #30d0a0 100%)',
+  'star-sport-gloves-blaze': 'linear-gradient(135deg, #1a0a06 0%, #ff6a1a 52%, #ffd28a 100%)',
+  'star-sport-gloves-vice': 'linear-gradient(135deg, #0e2a24 0%, #37d6a6 52%, #ff5ab0 100%)',
+  'star-specialist-gloves-fade': 'linear-gradient(135deg, #241038 0%, #8040d0 52%, #ffd45a 100%)',
+  'star-specialist-gloves-marble-fade': 'linear-gradient(135deg, #5a1020 0%, #f0c020 52%, #2a5ad0 100%)',
+  'star-m9-bayonet-doppler': 'linear-gradient(135deg, #06121a 0%, #1f8f6a 52%, #7a30c0 100%)',
+};
+
+/** A hue-rotated fallback so a newly added skin is still unique. */
+function fallbackGradient(skin) {
+  const hue = hashOf(skin.id) % 360;
+  return `linear-gradient(135deg, hsl(${hue} 45% 16%) 0%, hsl(${(hue + 40) % 360} 55% 38%) 55%, hsl(${(hue + 90) % 360} 70% 62%) 100%)`;
+}
+
+// Attach the derived fields once, at module load.
+SKINS.forEach((skin) => {
+  skin.gradient = GRADIENTS[skin.id] || fallbackGradient(skin);
+  skin.basePrice = priceInBand(skin);
+  skin.price = skin.basePrice; // the catalogue price now sits inside the band
+});
+
 const byId = new Map(SKINS.map((skin) => [skin.id, skin]));
 
 /** Fraction of the market price recovered when selling a skin back. */
@@ -105,9 +226,9 @@ export function getSkinById(id) {
   return byId.get(id) ?? null;
 }
 
-/** Crystal-aware price label, e.g. "3,175 ◆". */
+/** Crystal-aware price markup, e.g. "3,175 <crystal icon>". */
 export function formatPrice(value) {
-  return `${formatCrystals(value)} ◆`;
+  return `${formatCrystals(value)} ${crystalIcon(13)}`;
 }
 
 /** Crystals returned when a skin is sold (always at least 1). */
@@ -127,9 +248,14 @@ export function createSkinCard(skin, { qty = 0 } = {}) {
   card.setAttribute('role', 'button');
   card.setAttribute(
     'aria-label',
-    `${skin.weapon} | ${skin.finish}, ${skin.condition}, ${skin.rarity}, ${formatPrice(skin.price)}`
+    `${skin.weapon} | ${skin.finish}, ${skin.condition}, ${skin.rarity}, ${formatCrystals(
+      skin.price
+    )} Crystals`
   );
   card.style.setProperty('--rarity', RARITIES[skin.rarity] ?? RARITIES.Consumer);
+  // The explicit rarity slug (for CSS) and the skin's own gradient signature.
+  card.dataset.rarity = raritySlug(skin.rarity);
+  card.style.setProperty('--skin-gradient', skin.gradient || fallbackGradient(skin));
 
   const bar = document.createElement('span');
   bar.className = 'skin-rarity-bar';
@@ -192,7 +318,7 @@ export function createSkinCard(skin, { qty = 0 } = {}) {
 
   const price = document.createElement('span');
   price.className = 'skin-price';
-  price.textContent = formatPrice(skin.price);
+  price.innerHTML = formatPrice(skin.price);
 
   const rarity = document.createElement('span');
   rarity.className = 'skin-rarity-label';
