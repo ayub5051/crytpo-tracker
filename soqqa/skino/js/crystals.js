@@ -1,10 +1,10 @@
 /* ============================================================================
-   SKINO — Crystal currency
+   BLAZZER — Crystal currency
    The single in-app currency. Persisted in LocalStorage so the balance
    survives reloads. Other modules subscribe to keep their UI in sync.
    ========================================================================= */
 
-export const STORAGE_KEY = 'skino:crystals';
+export const STORAGE_KEY = 'blazzer:crystals';
 export const STARTING_CRYSTALS = 2500;
 export const FRIEND_SHARE_REWARD = 250;
 

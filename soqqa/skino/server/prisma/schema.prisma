@@ -1,0 +1,249 @@
+// ============================================================================
+// BLAZZER — Prisma schema
+// The live feed keeps recent drops in Redis; Postgres holds the durable daily
+// aggregates (for stats, reporting and season/battle-pass hooks later).
+//
+// Setup:
+//   npx prisma migrate dev --name init     # create the tables locally
+//   npx prisma generate                    # generate the client
+//   DATABASE_ENABLED=true DATABASE_URL=... npm start
+//
+// NOTE: the fair models (FairSeed/FairBet/FairAudit) are optional — without
+// Postgres the provably-fair subsystem persists to server/fair/data/fair.json.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// One row per UTC day. `totalValue` uses BigInt so large cumulative sums never
+/// overflow; `drops` counts accepted drops for the day.
+model DailyStat {
+  date       DateTime @id @db.Date
+  totalValue BigInt   @default(0)
+  drops      Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  @@map("daily_stats")
+}
+
+// ============================================================================
+// Provably fair (Stage 2). Used automatically once these models are generated;
+// otherwise the fair subsystem uses an atomic JSON file store instead.
+// ============================================================================
+
+/// Per-user seed state. `serverSeedEnc` is AES-256-GCM ciphertext — the seed
+/// itself is never exposed until the user rotates.
+model FairSeed {
+  userId         String    @id
+  serverSeedEnc  String
+  serverSeedHash String
+  clientSeed     String
+  nonce          Int       @default(0)
+  createdAt      DateTime  @default(now())
+  rotatedAt      DateTime?
+  updatedAt      DateTime  @updatedAt
+
+  @@map("fair_seeds")
+}
+
+/// One row per consumed bet: the commitment, the seeds used and the outcome.
+model FairBet {
+  id             String   @id
+  userId         String
+  game           String
+  nonce          Int
+  amount         Int      @default(0)
+  serverSeedHash String
+  clientSeed     String
+  outcome        Json
+  createdAt      DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("fair_bets")
+}
+
+/// Audit trail for seed init/rotation, client-seed edits and verifications.
+model FairAudit {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  ip        String?
+  meta      Json
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("fair_audits")
+}
+
+// ============================================================================
+// Inventory + trading (Stage 3). These models are optional — like the fair
+// models, they are used automatically once generated; otherwise the inventory
+// subsystem persists to server/inventory/data/items.json.
+//
+// `id` on InventoryItem is the per-instance uid (one row = one physical skin),
+// not the catalogue id — the catalogue id lives in `itemId`.
+// ============================================================================
+
+/// One owned skin instance. A user owning 3 copies of a skin has 3 rows.
+model InventoryItem {
+  id               String    @id @default(cuid())
+  userId           String
+  itemId           String // catalogue skin id, e.g. "ak-47-slate"
+  value            Int       @default(0) // catalogue value snapshot at grant time
+  obtainedAt       DateTime  @default(now())
+  obtainedVia      String    @default("purchase") // wheel|mines|case|trade|gift|purchase
+  stickers         Json      @default("[]") // [{ stickerId, slot, appliedAt }]
+  stattrak         Boolean   @default(false)
+  floatValue       Float?
+  isListed         Boolean   @default(false)
+  price            Int?
+  tradeLocked      Boolean   @default(false)
+  tradeLockedUntil DateTime?
+  fairProof        Json? // { serverSeedHash, clientSeed, nonce }
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([userId, obtainedAt])
+  @@index([itemId])
+  @@index([isListed])
+  @@map("inventory_items")
+}
+
+/// An active or historical sale of one InventoryItem on the secondary market.
+/// Catalogue metadata is denormalised so browse can filter server-side.
+model MarketListing {
+  id          String    @id @default(cuid())
+  itemId      String    @unique // InventoryItem.id
+  catalogueId String? // catalogue skin id
+  sellerId    String
+  price       Int
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  status      String    @default("active") // active|sold|cancelled|expired
+  buyerId     String?
+  soldAt      DateTime?
+  weapon      String    @default("")
+  finish      String    @default("")
+  condition   String    @default("")
+  rarity      String    @default("Consumer")
+  stattrak    Boolean   @default(false)
+  floatValue  Float?
+  stickers    Json      @default("[]")
+  fairProof   Json?
+
+  @@index([status, createdAt])
+  @@index([status, expiresAt])
+  @@index([sellerId])
+  @@index([catalogueId])
+  @@map("market_listings")
+}
+
+/// One completed sale — the raw history behind the suggested-price estimator.
+model MarketSale {
+  id        String   @id @default(cuid())
+  listingId String
+  itemId    String // catalogue skin id
+  price     Int
+  createdAt DateTime @default(now())
+
+  @@index([itemId, createdAt])
+  @@map("market_sales")
+}
+
+/// Demo-only Crystal balance so a purchase has two sides to settle.
+model MarketWallet {
+  userId    String   @id
+  balance   BigInt   @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@map("market_wallets")
+}
+
+/// A retry-safe purchase record keyed by the caller's Idempotency-Key header.
+model MarketIdempotencyKey {
+  key       String   @id
+  userId    String
+  scope     String
+  result    Json
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("market_idempotency_keys")
+}
+
+/// A two-sided item swap. Item id arrays live in JSON so a trade can hold up
+/// to 20 items per side without a join table.
+model Trade {
+  id             String    @id @default(cuid())
+  initiatorId    String
+  receiverId     String
+  initiatorItems          Json      @default("[]") // InventoryItem ids
+  receiverItems           Json      @default("[]")
+  initiatorOk             Boolean   @default(false)
+  receiverOk              Boolean   @default(false)
+  initiatorFinalConfirmed Boolean   @default(false)
+  receiverFinalConfirmed  Boolean   @default(false)
+  status                  String    @default("pending") // pending|ready|accepted|cancelled|completed|expired
+  createdAt               DateTime  @default(now())
+  expiresAt               DateTime
+  completedAt             DateTime?
+  cancelReason            String?
+
+  @@index([status, createdAt])
+  @@index([initiatorId])
+  @@index([receiverId])
+  @@map("trades")
+}
+
+/// A one-way gift of a single item, optionally with a short message.
+model Gift {
+  id         String    @id @default(cuid())
+  senderId   String
+  receiverId String
+  itemId     String // InventoryItem.id
+  message    String?
+  createdAt  DateTime  @default(now())
+  claimedAt  DateTime?
+
+  @@index([receiverId, createdAt])
+  @@index([senderId, createdAt])
+  @@map("gifts")
+}
+
+/// A provably-fair upgrade attempt (input items → one target).
+model UpgradeAttempt {
+  id         String   @id @default(cuid())
+  userId     String
+  inputItems Json     @default("[]") // InventoryItem ids
+  targetItem String // catalogue skin id
+  odds       Float // 0.0 – 1.0
+  result     String // win|lose
+  fairProof  Json? // { serverSeedHash, clientSeed, nonce }
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("upgrade_attempts")
+}
+
+/// Append-only ledger of every item movement — the compliance backbone that
+/// makes double-spends and fraud disputes answerable.
+model TransferAudit {
+  id         String   @id @default(cuid())
+  itemId     String // InventoryItem.id
+  fromUserId String?
+  toUserId   String?
+  reason     String // grant|remove|sell|buy|trade|gift|upgrade
+  ip         String?
+  meta       Json     @default("{}")
+  createdAt  DateTime @default(now())
+
+  @@index([itemId, createdAt])
+  @@index([toUserId, createdAt])
+  @@map("transfer_audits")
+}

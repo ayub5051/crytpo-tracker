@@ -1,0 +1,540 @@
+/* ============================================================================
+   BLAZZER — live drops feed
+   A persistent activity rail: floating panel on desktop, bottom sheet on
+   mobile, with a corner launcher when collapsed. Motion is transform/opacity
+   only and honours prefers-reduced-motion (the global rule in style.css also
+   neutralises every animation/transition here).
+   ========================================================================= */
+
+:root {
+  --live-w: 324px;
+  --live-gap: 16px;
+  --live-radius: var(--radius-lg);
+  --live-panel: rgba(13, 14, 17, 0.86);
+  --live-pos: #7bd88f;
+  --live-neg: #e06e6e;
+}
+
+/* --------------------------------------------------------------- launcher */
+
+.live-feed-launcher {
+  position: fixed;
+  right: var(--live-gap);
+  bottom: var(--live-gap);
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--line-accent);
+  border-radius: 999px;
+  background: var(--live-panel);
+  color: var(--text-hi);
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 0 18px 44px -22px rgba(94, 210, 226, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  opacity: 0;
+  transform: translateY(12px) scale(0.92);
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+.live-feed.is-collapsed .live-feed-launcher {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* ----------------------------------------------------------------- panel */
+
+.live-feed {
+  position: fixed;
+  right: var(--live-gap);
+  bottom: var(--live-gap);
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  width: min(var(--live-w), calc(100vw - 2 * var(--live-gap)));
+  max-height: min(70vh, 640px);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--live-radius);
+  background: var(--live-panel);
+  box-shadow:
+    0 40px 90px -46px rgba(0, 0, 0, 0.95),
+    0 0 0 1px rgba(94, 210, 226, 0.06);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  overflow: hidden;
+  transform: translateY(0) scale(1);
+  transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease);
+}
+
+/* Collapsed: slide fully out of view, launcher takes over. */
+.live-feed.is-collapsed {
+  transform: translateY(calc(100% + 24px)) scale(0.98);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- header */
+
+.live-feed-head {
+  flex: 0 0 auto;
+  padding: 0.8rem 0.85rem 0.7rem;
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.live-feed-titlerow {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.live-feed-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+}
+
+.live-feed-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--live-pos);
+  box-shadow: 0 0 0 0 rgba(123, 216, 143, 0.55);
+  animation: live-dot-pulse 1.8s var(--ease-soft) infinite;
+}
+
+/* Disconnected / reconnecting states tint the dot and label. */
+.live-feed.is-reconnecting .live-feed-dot {
+  background: #e8c56a;
+  box-shadow: 0 0 0 0 rgba(232, 197, 106, 0.5);
+}
+.live-feed.is-offline .live-feed-dot {
+  background: var(--text-low);
+  animation: none;
+}
+
+.live-feed-title {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-hi);
+}
+
+.live-feed-collapse {
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: var(--text-mid);
+  border: 1px solid var(--line-faint);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: transform 180ms var(--ease-expo-out), color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.live-feed-collapse:hover {
+  color: var(--text-hi);
+  border-color: var(--line-soft);
+}
+
+.live-feed-collapse svg {
+  transition: transform var(--dur) var(--ease);
+}
+
+.live-feed-metrics {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-low);
+}
+
+.live-feed-metrics b {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.live-feed-status {
+  margin-top: 0.5rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  color: #e8c56a;
+}
+.live-feed-status[hidden] {
+  display: none;
+}
+
+/* --------------------------------------------------------------- filters */
+
+.live-feed-filters {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.65rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.live-feed-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.live-feed-filter {
+  flex: 0 0 auto;
+  padding: 0.3rem 0.62rem;
+  border: 1px solid var(--line-faint);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-mid);
+  font: inherit;
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease), transform 180ms var(--ease-expo-out);
+}
+
+.live-feed-filter:hover {
+  color: var(--text-hi);
+  border-color: var(--line-soft);
+}
+
+.live-feed-filter.is-active {
+  color: var(--text-hi);
+  border-color: var(--line-accent);
+  background: var(--accent-soft);
+}
+
+/* ------------------------------------------------------------------ list */
+
+.live-feed-scroll {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.live-feed-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.live-feed-empty {
+  padding: 1.6rem 1rem;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-low);
+}
+.live-feed-empty[hidden] {
+  display: none;
+}
+
+/* "N new drops" pill, pinned to the top of the scroll area. */
+.live-feed-newpill {
+  position: sticky;
+  top: 0.4rem;
+  z-index: 2;
+  display: block;
+  margin: 0.4rem auto 0;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--line-accent);
+  border-radius: 999px;
+  background: rgba(10, 12, 14, 0.92);
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.7rem;
+  cursor: pointer;
+  animation: live-pill-in 260ms var(--ease-expo-out) both;
+}
+.live-feed-newpill[hidden] {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ card */
+
+.live-drop {
+  position: relative;
+  display: grid;
+  grid-template-columns: 3px 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.6rem 0.5rem 0.35rem;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.022);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    transform 180ms var(--ease-expo-out);
+}
+
+.live-drop:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--line-soft);
+}
+
+/* Rarity colour bar on the left edge. */
+.live-drop-bar {
+  align-self: stretch;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--rarity, var(--text-low));
+  box-shadow: 0 0 10px -1px var(--rarity, transparent);
+}
+
+.live-drop-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  object-fit: cover;
+  border: 1px solid var(--line-faint);
+  background: #15171c;
+}
+
+.live-drop-main {
+  min-width: 0;
+}
+
+.live-drop-user {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-mid);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.live-drop-item {
+  font-size: 0.78rem;
+  color: var(--text-hi);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.live-drop-time {
+  font-size: 0.64rem;
+  letter-spacing: 0.02em;
+  color: var(--text-low);
+}
+
+.live-drop-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+}
+
+.live-drop-thumb {
+  width: 34px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--line-faint);
+  background: linear-gradient(135deg, #2a2d34, #14161a);
+}
+
+.live-drop-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-hi);
+}
+
+/* Entrance: slide in from the right, expo-out. */
+.live-drop.is-new {
+  animation: live-drop-in 420ms var(--ease-expo-out) both;
+}
+
+/* Huge win (100k+): a gold flash that settles. Transform/opacity only. */
+.live-drop.is-huge::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(100deg, rgba(232, 197, 106, 0.34), rgba(255, 244, 207, 0));
+  opacity: 0;
+}
+
+.live-drop.is-huge {
+  border-color: rgba(232, 197, 106, 0.55);
+  animation: live-drop-in 420ms var(--ease-expo-out) both,
+    live-huge-flash 900ms var(--ease-soft) 120ms both;
+}
+
+/* ------------------------------------------------------------ detail modal */
+
+.live-detail {
+  position: fixed;
+  inset: 0;
+  z-index: 280;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.live-detail.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.live-detail-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 5, 7, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.live-detail-card {
+  position: relative;
+  width: min(380px, 100%);
+  padding: 1.25rem;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--live-radius);
+  background: var(--bg-raised);
+  box-shadow: 0 40px 90px -40px rgba(0, 0, 0, 0.95);
+  transform: translateY(14px) scale(0.98);
+  transition: transform var(--dur) var(--ease);
+}
+
+.live-detail.is-open .live-detail-card {
+  transform: translateY(0) scale(1);
+}
+
+.live-detail-thumb {
+  width: 100%;
+  height: 120px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-faint);
+}
+
+.live-detail-close {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+}
+
+/* -------------------------------------------------------------- keyframes */
+
+@keyframes live-dot-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(123, 216, 143, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(123, 216, 143, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(123, 216, 143, 0);
+  }
+}
+
+@keyframes live-drop-in {
+  from {
+    opacity: 0;
+    transform: translateX(26px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes live-pill-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes live-huge-flash {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.035);
+    box-shadow: 0 0 26px -4px rgba(232, 197, 106, 0.75);
+  }
+  60% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* --------------------------------------------------------- larger screens */
+
+@media (min-width: 1100px) {
+  .live-feed {
+    top: 84px;
+    bottom: var(--live-gap);
+    max-height: none;
+  }
+
+  /* Collapse slides right instead of down. */
+  .live-feed.is-collapsed {
+    transform: translateX(calc(100% + 24px)) scale(0.98);
+  }
+}
+
+/* ------------------------------------------------------------- 375px pass */
+
+@media (max-width: 420px) {
+  :root {
+    --live-gap: 10px;
+  }
+
+  .live-feed {
+    width: calc(100vw - 2 * var(--live-gap));
+    max-height: 68vh;
+  }
+
+  .live-drop-thumb {
+    display: none; /* keep the row crisp on the narrowest screens */
+  }
+}
+
+/* --------------------------------------------------------- reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .live-feed,
+  .live-feed-launcher,
+  .live-drop,
+  .live-detail,
+  .live-detail-card {
+    transition: none;
+  }
+
+  .live-drop.is-new,
+  .live-drop.is-huge,
+  .live-feed-newpill,
+  .live-feed-dot {
+    animation: none;
+  }
+}

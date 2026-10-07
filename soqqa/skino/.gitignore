@@ -1,0 +1,29 @@
+# Node / server
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+
+# Prisma generated client
+server/generated/
+
+# Provably-fair runtime data (file store)
+server/fair/data/
+
+# Inventory / trading runtime data (file store)
+server/inventory/data/
+
+# Marketplace runtime data (file store)
+server/market/data/
+
+# Trade runtime data (file store)
+server/trade/data/
+
+# Upgrade runtime data (file store)
+server/upgrade/data/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

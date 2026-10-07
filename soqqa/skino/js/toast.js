@@ -1,5 +1,5 @@
 /* ============================================================================
-   SKINO — toast notifications
+   BLAZZER — toast notifications
    Small, self-dismissing messages used for purchases and mini-game results.
    ========================================================================= */
 

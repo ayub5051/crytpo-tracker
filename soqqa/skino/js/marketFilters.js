@@ -1,37 +1,27 @@
 /* ============================================================================
-   SKINO — market filters
-   Search, rarity and sort controls layered over the skin catalogue. Rendering
-   is delegated to skins.js so cards stay consistent everywhere.
+   BLAZZER — market toolbar (Stage 3.2)
+   The existing search / rarity / sort bar, now a thin adapter: it keeps its own
+   markup and behaviour but hands every change to js/marketplace.js, which owns
+   the listing model, the drawer and the grid. Keeping the toolbar here means
+   the bar itself is untouched while the grid beneath it became a real market.
    ========================================================================= */
 
-import { SKINS, RARITIES, renderMarket } from './skins.js';
+import { RARITIES } from './skins.js';
 
-const SORTS = {
-  'price-asc': (a, b) => a.price - b.price,
-  'price-desc': (a, b) => b.price - a.price,
-  name: (a, b) =>
-    `${a.weapon} ${a.finish}`.localeCompare(`${b.weapon} ${b.finish}`),
-};
-
-const EMPTY_MARKUP = `
-  <span class="empty-mark" aria-hidden="true">
-    <svg viewBox="0 0 24 24" width="26" height="26" fill="none">
-      <circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="1.3" />
-      <path d="m15.5 15.5 4 4" stroke="currentColor" stroke-width="1.3"
-        stroke-linecap="round" />
-    </svg>
-  </span>
-  <p class="empty-title">No skins match those filters</p>
-  <p class="empty-copy">Try a different search or rarity tier.</p>
-  <button class="btn btn-ghost" type="button" data-filter-reset>Reset filters</button>`;
-
-export function initMarketFilters() {
-  const grid = document.querySelector('[data-market-grid]');
-  const countEl = document.querySelector('[data-market-count]');
+/**
+ * Wire the toolbar controls.
+ *
+ * @param {object} handlers
+ * @param {(value:string)=>void} handlers.onSearch
+ * @param {(value:string)=>void} handlers.onRarity
+ * @param {(value:string)=>void} handlers.onSort
+ */
+export function initMarketToolbar({ onSearch, onRarity, onSort } = {}) {
   const search = document.querySelector('[data-filter-search]');
   const rarity = document.querySelector('[data-filter-rarity]');
   const sort = document.querySelector('[data-filter-sort]');
 
+  // Populate the rarity select once (the markup ships with only "All rarities").
   if (rarity && rarity.options.length <= 1) {
     Object.keys(RARITIES).forEach((tier) => {
       const opt = document.createElement('option');
@@ -41,54 +31,9 @@ export function initMarketFilters() {
     });
   }
 
-  const featuredIndex = new Map(SKINS.map((skin, i) => [skin.id, i]));
+  search?.addEventListener('input', (event) => onSearch?.(event.target.value || ''));
+  rarity?.addEventListener('change', (event) => onRarity?.(event.target.value || 'all'));
+  sort?.addEventListener('change', (event) => onSort?.(event.target.value || 'featured'));
 
-  function apply() {
-    const q = (search?.value ?? '').trim().toLowerCase();
-    const tier = rarity?.value ?? 'all';
-    const sortKey = sort?.value ?? 'featured';
-
-    const matches = SKINS.filter((skin) => {
-      if (tier !== 'all' && skin.rarity !== tier) return false;
-      if (!q) return true;
-      return `${skin.weapon} ${skin.finish} ${skin.condition}`
-        .toLowerCase()
-        .includes(q);
-    });
-
-    const list =
-      sortKey === 'featured'
-        ? matches.sort((a, b) => featuredIndex.get(a.id) - featuredIndex.get(b.id))
-        : matches.sort(SORTS[sortKey] ?? (() => 0));
-
-    renderMarket(grid, list);
-
-    if (countEl) {
-      countEl.textContent = `${list.length} listing${list.length === 1 ? '' : 's'}`;
-    }
-
-    if (list.length === 0 && grid) {
-      const empty = document.createElement('div');
-      empty.className = 'empty-state';
-      empty.innerHTML = EMPTY_MARKUP;
-      grid.replaceChildren(empty);
-    }
-  }
-
-  function reset() {
-    if (search) search.value = '';
-    if (rarity) rarity.value = 'all';
-    if (sort) sort.value = 'featured';
-    apply();
-  }
-
-  search?.addEventListener('input', apply);
-  rarity?.addEventListener('change', apply);
-  sort?.addEventListener('change', apply);
-  grid?.addEventListener('click', (event) => {
-    if (event.target.closest('[data-filter-reset]')) reset();
-  });
-
-  apply();
-  return apply;
+  return { search, rarity, sort };
 }

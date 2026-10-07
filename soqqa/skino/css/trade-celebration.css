@@ -1,0 +1,172 @@
+/* ============================================================================
+   BLAZZER — trade celebration (Stage 3.3)
+   A distinct full-screen moment: dark field, cyan glow, item sets converging
+   from the edges, then a soft burst into a checkmark. Transform/opacity only.
+   ========================================================================= */
+
+.trade-celebration {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.6rem;
+  background: rgba(6, 6, 8, 0.86);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 300ms var(--ease-expo-out), visibility 0s linear 300ms;
+}
+
+.trade-celebration.is-in {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 300ms var(--ease-expo-out), visibility 0s;
+}
+
+.trade-celebration.is-out {
+  opacity: 0;
+  transform: scale(1.02);
+}
+
+/* Soft cyan bloom behind the copy. */
+.trade-celebration-glow {
+  position: absolute;
+  width: min(720px, 90vw);
+  height: min(720px, 90vw);
+  border-radius: 50%;
+  background: radial-gradient(50% 50% at 50% 50%, var(--accent-glow), transparent 70%);
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 500ms var(--ease-expo-out), transform 700ms var(--ease-expo-out);
+  pointer-events: none;
+}
+
+.trade-celebration.is-in .trade-celebration-glow {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Travelling item chips. */
+.trade-celebration-fly {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.trade-fly {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  color: var(--accent);
+  border: 1px solid var(--line-accent);
+  background: var(--bg-raised);
+  box-shadow: 0 16px 40px -20px var(--accent-glow);
+  opacity: 0;
+  transition: transform 700ms var(--ease-expo-out), opacity 400ms var(--ease-expo-out);
+}
+
+.trade-fly.is-left {
+  left: -12%;
+  transform: translate(-40px, calc(-50% + var(--i) * 14px)) rotate(-12deg);
+}
+
+.trade-fly.is-right {
+  right: -12%;
+  transform: translate(40px, calc(-50% + var(--i) * 14px)) rotate(12deg);
+}
+
+.trade-celebration.is-in .trade-fly {
+  opacity: 1;
+  transform: translate(0, calc(-50% + var(--i) * 14px));
+}
+
+/* The whole set bursts away as the checkmark lands. */
+.trade-celebration.is-burst .trade-fly {
+  opacity: 0;
+  transform: translate(0, calc(-50% + var(--i) * 14px)) scale(1.5);
+  transition: transform 360ms var(--ease-expo-in), opacity 300ms var(--ease-expo-in);
+}
+
+/* Checkmark. */
+.trade-celebration-mark {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #04222a;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px rgba(94, 210, 226, 0.5), 0 30px 70px -30px var(--accent-glow);
+  opacity: 0;
+  transform: scale(0.5);
+}
+
+.trade-celebration.is-mark .trade-celebration-mark {
+  opacity: 1;
+  transform: scale(1);
+  transition: transform 520ms var(--ease-spring), opacity 240ms var(--ease-expo-out);
+}
+
+.trade-celebration-title {
+  position: relative;
+  z-index: 1;
+  margin-top: 0.6rem;
+  font-size: clamp(1.4rem, 4vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-hi);
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.trade-celebration-sub {
+  position: relative;
+  z-index: 1;
+  font-size: 0.9rem;
+  color: var(--text-mid);
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.trade-celebration.is-mark .trade-celebration-title,
+.trade-celebration.is-mark .trade-celebration-sub {
+  opacity: 1;
+  transform: translateY(0);
+  transition: transform 520ms var(--ease-expo-out) 80ms, opacity 400ms var(--ease-expo-out) 80ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trade-celebration,
+  .trade-celebration-glow,
+  .trade-fly,
+  .trade-celebration-mark,
+  .trade-celebration-title,
+  .trade-celebration-sub {
+    transition: opacity 200ms var(--ease);
+  }
+
+  .trade-celebration {
+    transform: none;
+  }
+
+  .trade-celebration-glow,
+  .trade-fly {
+    display: none;
+  }
+
+  .trade-celebration-mark {
+    transform: none;
+  }
+}

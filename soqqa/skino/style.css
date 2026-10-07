@@ -1,5 +1,5 @@
 /* ============================================================================
-   SKINO — minimal dark marketplace theme
+   BLAZZER — minimal dark marketplace theme
    Stage 1: visual foundation + view switching only.
 
    Sections
@@ -17,11 +17,13 @@
      12  Skin detail modal
      13  Toasts
      14  Wheel
-     15  Math Challenge
+     15  Mines
      16  Crystal rewards
      17  Transaction history
      18  Responsive
-     19  Reduced motion
+     19  Celebration
+     20  Purchase celebration
+     21  Reduced motion
    ========================================================================= */
 
 /* ==========================================================================
@@ -63,6 +65,11 @@
   /* Motion */
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   --ease-soft: cubic-bezier(0.4, 0.14, 0.3, 1);
+  /* Motion language for the interactive tiles: enter fast then settle, exit
+     quickly, and overshoot slightly on impact. */
+  --ease-expo-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-expo-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --dur-fast: 0.3s;
   --dur: 0.4s;
   --dur-slow: 0.5s;
@@ -174,10 +181,30 @@ a {
   top: 1rem;
 }
 
+/* Crystal icon — the custom SVG currency mark. Alignment and glow live here so
+   the gem sits on the text baseline in copy, buttons, stats and history rows
+   alike, and reads as a premium gem rather than a flat glyph. */
+.crystal {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.crystal-icon,
+.mine-icon {
+  display: inline-block;
+  vertical-align: middle;
+  overflow: visible;
+}
+
+.crystal-icon {
+  filter: drop-shadow(0 0 5px rgba(94, 210, 226, 0.45));
+}
+
 /* ==========================================================================
    04  MOTION
    ========================================================================== */
-@keyframes skino-rise {
+@keyframes blazzer-rise {
   from {
     opacity: 0;
     transform: translateY(14px);
@@ -188,7 +215,7 @@ a {
   }
 }
 
-@keyframes skino-shimmer {
+@keyframes blazzer-shimmer {
   0% {
     background-position: -160% 0;
   }
@@ -243,12 +270,20 @@ a {
   filter: drop-shadow(0 0 10px var(--accent-glow));
 }
 
+/* Wordmark: heavy, lightly tracked, with a soft cyan halo so the brand reads
+   as premium without shouting over the mark beside it. */
 .brand-name {
   font-size: 1.02rem;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-indent: 0.22em;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-indent: 0.08em;
   color: var(--text-hi);
+  text-shadow: 0 0 18px rgba(94, 210, 226, 0.28);
+  transition: text-shadow var(--dur) var(--ease);
+}
+
+.brand:hover .brand-name {
+  text-shadow: 0 0 22px rgba(94, 210, 226, 0.5);
 }
 
 /* Navigation */
@@ -322,8 +357,68 @@ a {
 }
 
 .balance-currency {
+  display: inline-flex;
+  align-items: center;
   color: var(--accent);
-  margin-right: 1px;
+  margin-right: 3px;
+  vertical-align: middle;
+}
+
+/* Balance count-up: the value scale-pulses and the gem glows while the number
+   climbs (driven by js/app.js). Reduced motion skips both. */
+.balance.is-counting .balance-value {
+  animation: balance-pulse 800ms var(--ease) both;
+}
+
+.balance.is-counting .crystal-icon {
+  animation: crystal-count-glow 800ms var(--ease) both;
+}
+
+@keyframes balance-pulse {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes crystal-count-glow {
+  0% {
+    filter: drop-shadow(0 0 4px rgba(94, 210, 226, 0.4));
+  }
+  35% {
+    filter: drop-shadow(0 0 12px rgba(94, 210, 226, 0.95));
+  }
+  100% {
+    filter: drop-shadow(0 0 5px rgba(94, 210, 226, 0.45));
+  }
+}
+
+/* Spending ticks the balance down quickly (driven by js/app.js): the value
+   dips while the gem dims for a beat, so a purchase reads as a small outflow
+   rather than a win. Reduced motion skips both. */
+.balance.is-spending .balance-value {
+  animation: balance-pulse 400ms var(--ease) both;
+}
+
+.balance.is-spending .crystal-icon {
+  animation: crystal-spend-dim 400ms var(--ease) both;
+}
+
+@keyframes crystal-spend-dim {
+  0% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .balance-row {
@@ -361,7 +456,7 @@ a {
 .hero {
   padding-block: clamp(3.5rem, 9vw, 6.5rem) clamp(2rem, 5vw, 3.5rem);
   max-width: 720px;
-  animation: skino-rise 0.7s var(--ease) both;
+  animation: blazzer-rise 0.7s var(--ease) both;
 }
 
 .hero-eyebrow {
@@ -420,7 +515,7 @@ a {
 }
 
 .view {
-  animation: skino-rise var(--dur-slow) var(--ease) both;
+  animation: blazzer-rise var(--dur-slow) var(--ease) both;
 }
 
 .view[hidden] {
@@ -556,31 +651,33 @@ a {
   gap: 1.1rem;
 }
 
+/* Solid, opaque frame. No backdrop blur and no translucent background, so the
+   page can never bleed through and muddy the border. The 1px border carries a
+   subtle tint of the card's own rarity for identity — nothing more. */
 .skin-card {
   --rarity: var(--accent);
   position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--line-faint);
+  border: 1px solid color-mix(in srgb, var(--rarity) 40%, transparent);
   border-radius: var(--radius-lg);
-  background: var(--bg-card);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  transition: transform var(--dur-slow) var(--ease), border-color var(--dur) var(--ease),
-    background var(--dur) var(--ease), box-shadow var(--dur-slow) var(--ease);
+  background: var(--bg-raised);
+  transition: transform 200ms var(--ease-expo-out), border-color 200ms var(--ease-expo-out),
+    background 200ms var(--ease-expo-out), box-shadow 200ms var(--ease-expo-out);
   will-change: transform;
 }
 
-/* Elegant hover: subtle lift + soft glow tinted by the card's rarity. */
+/* Hover: a gentle lift and a soft outward glow in the card's OWN rarity hue.
+   The surface stays solid — only mixed slightly toward the rarity — and the
+   shadow is always outside the border box, so the interior never tints. */
 .skin-card:hover {
   transform: translateY(-5px);
-  border-color: color-mix(in srgb, var(--rarity) 42%, transparent);
-  background: var(--bg-card-hover);
+  border-color: color-mix(in srgb, var(--rarity) 68%, transparent);
+  background: color-mix(in srgb, var(--rarity) 8%, var(--bg-raised));
   box-shadow:
-    0 24px 50px -28px rgba(0, 0, 0, 0.85),
-    0 0 0 1px color-mix(in srgb, var(--rarity) 22%, transparent),
-    0 0 34px -16px color-mix(in srgb, var(--rarity) 34%, transparent);
+    0 24px 50px -30px rgba(0, 0, 0, 0.85),
+    0 0 26px -18px color-mix(in srgb, var(--rarity) 38%, transparent);
 }
 
 /* Thin rarity stripe across the top edge of the card. */
@@ -607,14 +704,40 @@ a {
   place-items: center;
   aspect-ratio: 4 / 3;
   border-bottom: 1px solid var(--line-faint);
-  background:
+  /* A calm, dark surface — the item is the hero, never the backdrop.
+
+     Layer 1 is a flat dark overlay sitting ON TOP of the skin's gradient, so
+     only ~22% of that gradient's intensity ever reaches the eye: the hue is
+     still legible as a soft glow (orange for Asiimov, green for Fire Serpent,
+     red for Redline) but it can never read as a paint fill. Layer 2 is a faint
+     pool of the rarity colour, layer 3 the skin's own gradient at a whisper.
+     The artwork paints above all of it. */
+  background-color: #0f0f14;
+  background-image:
+    linear-gradient(rgba(10, 12, 16, 0.78), rgba(10, 12, 16, 0.78)),
     radial-gradient(
       120% 90% at 50% 0%,
-      color-mix(in srgb, var(--rarity) 12%, transparent),
+      color-mix(in srgb, var(--rarity) 10%, transparent),
       transparent 62%
     ),
-    linear-gradient(160deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+    var(--skin-gradient, linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012)));
+  background-size: cover;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -28px 42px -28px rgba(0, 0, 0, 0.85);
 }
+
+/* Explicit rarity colours, mirroring js/skins.js RARITIES. The inline custom
+   property (set per card) agrees with these, so the border, hover glow and
+   background tint always match the item's own rarity — never a neighbour's. */
+.skin-card[data-rarity='consumer'] { --rarity: #b0c3d9; }
+.skin-card[data-rarity='industrial'] { --rarity: #5e98d9; }
+.skin-card[data-rarity='mil-spec'] { --rarity: #4b69ff; }
+.skin-card[data-rarity='restricted'] { --rarity: #8847ff; }
+.skin-card[data-rarity='classified'] { --rarity: #d32ce6; }
+.skin-card[data-rarity='covert'] { --rarity: #eb4b4b; }
+.skin-card[data-rarity='extraordinary'] { --rarity: #ffd700; }
+.skin-card[data-rarity='contraband'] { --rarity: #ffd700; }
 
 /* Real CDN artwork fills the thumb; the glyph is only a fallback. */
 .skin-img {
@@ -622,7 +745,10 @@ a {
   height: 100%;
   object-fit: contain;
   padding: 8%;
-  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.55));
+  /* A tight contact shadow plus a wide soft one, so the item sits ON the
+     surface instead of floating flat against it. */
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 12px 26px rgba(0, 0, 0, 0.72));
   transition: transform var(--dur-slow) var(--ease);
 }
 
@@ -637,7 +763,7 @@ a {
   height: auto;
   color: var(--text-hi);
   opacity: 0.5;
-  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.68));
   transition: transform var(--dur-slow) var(--ease), opacity var(--dur) var(--ease);
 }
 
@@ -750,7 +876,7 @@ a {
       rgba(255, 255, 255, 0.05) 100%
     )
     0 0 / 200% 100%;
-  animation: skino-shimmer 2.6s var(--ease-soft) infinite;
+  animation: blazzer-shimmer 2.6s var(--ease-soft) infinite;
 }
 
 .skin-line-lg {
@@ -898,101 +1024,163 @@ a {
 }
 
 /* ==========================================================================
-   11  AUCTION
+   11  MYSTERY CASE
    ========================================================================== */
-.auction-panel {
+.case-panel {
   display: grid;
-  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
   align-items: center;
   gap: clamp(1.5rem, 4vw, 3rem);
   padding: clamp(1.25rem, 3vw, 2rem);
+  margin-bottom: 1.6rem;
   border: 1px solid var(--line-faint);
   border-radius: var(--radius-lg);
   background: var(--bg-card);
 }
 
-.auction-stage {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.7rem;
+.case-stage {
+  position: relative;
+  width: 100%;
 }
 
-.auction-lot {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: min(260px, 100%);
-  aspect-ratio: 4 / 3;
+/* Horizontal reel viewport — tiles scroll under a centred pointer. Edges are
+   masked so the strip fades out rather than clipping hard. */
+.case-reel {
   overflow: hidden;
   border: 1px solid var(--line-faint);
   border-radius: var(--radius-md);
-  background:
-    radial-gradient(120% 90% at 50% 0%, var(--accent-soft), transparent 62%),
-    linear-gradient(160deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
 }
 
-.auction-img {
-  width: 100%;
-  height: 100%;
+.case-track {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  will-change: transform;
+}
+
+.case-tile {
+  position: relative;
+  flex: 0 0 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 116px;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.case-tile-img {
+  width: 72%;
+  height: 58%;
   object-fit: contain;
-  padding: 10%;
-  transition: filter var(--dur-slow) var(--ease), transform var(--dur-slow) var(--ease);
 }
 
-/* Veiled mystery lot: blurred and dimmed until the auction settles. */
-.auction-img.is-hidden {
-  filter: blur(20px) brightness(0.5) saturate(0.7);
-  transform: scale(1.15);
-}
-
-.auction-lot::after {
-  content: '?';
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: 2.6rem;
-  font-weight: 600;
-  color: var(--accent);
-  text-shadow: 0 6px 22px rgba(0, 0, 0, 0.75);
-  opacity: 0;
-  transition: opacity var(--dur) var(--ease);
-  pointer-events: none;
-}
-
-.auction-lot.is-veiled::after {
-  opacity: 1;
-}
-
-.auction-rarity {
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
+.case-tile-name {
+  max-width: 88%;
+  overflow: hidden;
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-low);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.auction-name {
-  font-size: 0.98rem;
+.case-tile-value {
+  font-size: 1rem;
   font-weight: 600;
-  text-align: center;
   color: var(--text-hi);
 }
 
-.auction-side {
+.case-tile-mark {
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+.case-tile.is-winner {
+  border-color: var(--line-accent);
+  background: var(--accent-soft);
+}
+
+/* Centre pointer the reel settles under. */
+.case-pointer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  z-index: 2;
+  width: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, transparent, var(--accent), transparent);
+  box-shadow: 0 0 12px var(--accent-glow);
+  pointer-events: none;
+}
+
+.case-side {
   display: flex;
   flex-direction: column;
 }
 
-.auction-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-top: 1.4rem;
+.case-tiers {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 1.2rem;
 }
 
-.auction-actions .btn {
-  margin-top: 0;
+.case-tier {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0.4rem;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-mid);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+
+.case-tier:hover {
+  border-color: var(--line-soft);
+  color: var(--text-hi);
+}
+
+.case-tier.is-active {
+  border-color: var(--line-accent);
+  background: var(--accent-soft);
+  color: var(--text-hi);
+}
+
+.case-tier-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.case-tier-cost {
+  font-size: 0.68rem;
+  color: var(--text-low);
+}
+
+.case-tier.is-active .case-tier-cost {
+  color: var(--accent);
+}
+
+.case-play {
+  align-self: flex-start;
+  margin-top: 1.1rem;
+}
+
+.case-play.is-short {
+  opacity: 0.6;
 }
 
 /* ==========================================================================
@@ -1284,149 +1472,22 @@ body.modal-open {
   filter: drop-shadow(0 24px 50px rgba(0, 0, 0, 0.55));
 }
 
-/* --- Big-win lighting ---------------------------------------------------
-   A single cinematic burst of light from the wheel centre: a broad halo, a
-   few soft rays and a hot core, all layered over the canvas. The class toggle
-   lives in js/wheel.js; every bit of motion is CSS here, so the spin physics
-   stay untouched. No particles, no confetti — just light that blooms then
-   fades. Duration (2200ms) matches BIG_WIN_MS in wheel.js. */
-.wheel-bloom {
-  position: absolute;
-  inset: 0;
-  z-index: 1; /* above the canvas, below the pointer (z-index: 2) */
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.2s linear;
+/* Scale pulse fired the instant the spin stops (js/wheel.js). A transform-only
+   class on the wrapper — the spin animation, timing and easing are untouched. */
+.wheel-stage.is-win-pulse {
+  animation: wheel-win-pulse 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.wheel-bloom span {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  border-radius: 50%;
-  transform: translate(-50%, -50%) scale(0.2);
-  opacity: 0;
-  will-change: transform, opacity;
-}
-
-/* Broad radial wash expanding out from the hub. */
-.wheel-bloom-halo {
-  width: 150%;
-  height: 150%;
-  background: radial-gradient(
-    circle,
-    rgba(94, 210, 226, 0.85) 0%,
-    rgba(94, 210, 226, 0.34) 32%,
-    rgba(94, 210, 226, 0.12) 56%,
-    transparent 74%
-  );
-  filter: blur(22px);
-}
-
-/* Light rays, masked into a soft ring so they read as glow, not spokes. */
-.wheel-bloom-rays {
-  width: 190%;
-  height: 190%;
-  background: repeating-conic-gradient(
-    from 0deg,
-    rgba(255, 255, 255, 0.5) 0deg 2deg,
-    transparent 2deg 22.5deg
-  );
-  -webkit-mask-image: radial-gradient(circle, transparent 26%, #000 44%, transparent 76%);
-  mask-image: radial-gradient(circle, transparent 26%, #000 44%, transparent 76%);
-  filter: blur(6px) saturate(1.15);
-}
-
-/* Hot centre core for the initial flash. */
-.wheel-bloom-core {
-  width: 62%;
-  height: 62%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.98) 0%,
-    rgba(94, 210, 226, 0.9) 24%,
-    transparent 64%
-  );
-  filter: blur(10px);
-}
-
-@keyframes bloom-halo {
+@keyframes wheel-win-pulse {
   0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.25);
+    transform: scale(1);
   }
-  14% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(0.9);
-  }
-  34% {
-    opacity: 0.8;
-    transform: translate(-50%, -50%) scale(1.06);
+  45% {
+    transform: scale(1.03);
   }
   100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1.5);
+    transform: scale(1);
   }
-}
-
-@keyframes bloom-rays {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.3) rotate(0deg);
-  }
-  16% {
-    opacity: 0.9;
-    transform: translate(-50%, -50%) scale(0.95) rotate(8deg);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1.45) rotate(26deg);
-  }
-}
-
-@keyframes bloom-core {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.4);
-  }
-  8% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.05);
-  }
-  22% {
-    opacity: 0.55;
-    transform: translate(-50%, -50%) scale(1.35);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(2);
-  }
-}
-
-/* Only animate while the stage carries the win class. */
-.wheel-stage.big-win-active .wheel-bloom {
-  opacity: 1;
-}
-
-.wheel-stage.big-win-active .wheel-bloom-halo {
-  animation: bloom-halo 2200ms var(--ease) both;
-}
-
-.wheel-stage.big-win-active .wheel-bloom-rays {
-  animation: bloom-rays 2200ms var(--ease) both;
-}
-
-.wheel-stage.big-win-active .wheel-bloom-core {
-  animation: bloom-core 2200ms var(--ease) both;
-}
-
-/* "big" tier (skin prizes / 250+ Crystals) blooms a touch larger and hotter. */
-.wheel-stage[data-win-tier='big'] .wheel-bloom {
-  transform: scale(1.14);
-}
-
-.wheel-stage[data-win-tier='big'] .wheel-bloom-core {
-  filter: blur(8px) brightness(1.25);
 }
 
 .wheel-pointer {
@@ -1499,47 +1560,12 @@ body.modal-open {
   color: var(--text-mid);
 }
 
-/* Screen-wide glow + vignette pulse, timed with the bloom above. */
-.big-win-vignette {
-  position: fixed;
-  inset: 0;
-  z-index: 250; /* above content/modal, below toasts (z-index: 300) */
-  pointer-events: none;
-  opacity: 0;
-  background: radial-gradient(
-    circle at 50% 46%,
-    rgba(94, 210, 226, 0.16) 0%,
-    rgba(94, 210, 226, 0.06) 34%,
-    transparent 62%,
-    rgba(0, 0, 0, 0.28) 100%
-  );
-}
-
-@keyframes win-vignette {
-  0% {
-    opacity: 0;
-  }
-  14% {
-    opacity: 0.9;
-  }
-  40% {
-    opacity: 0.5;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-body.big-win-active .big-win-vignette {
-  animation: win-vignette 2200ms var(--ease) both;
-}
-
 /* ==========================================================================
-   15  MATH CHALLENGE
+   15  MINES
    ========================================================================== */
-.math-panel {
+.mines-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
   align-items: center;
   gap: clamp(1.5rem, 4vw, 3rem);
   padding: clamp(1.25rem, 3vw, 2rem);
@@ -1549,102 +1575,476 @@ body.big-win-active .big-win-vignette {
   background: var(--bg-card);
 }
 
-.math-stage {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
+.mines-stage {
+  width: 100%;
+  max-width: 420px;
+  margin-inline: auto;
 }
 
-.math-problem {
-  min-height: 1.2em;
-  font-size: clamp(2rem, 6vw, 3rem);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-hi);
+/* Five equal columns AND five equal rows inside a square container keeps every
+   cell identical; `aspect-ratio` on the tile below is the belt-and-braces
+   fallback if the grid ever resolves without a definite block size. */
+.mines-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+  gap: clamp(6px, 1.5vw, 12px);
+  aspect-ratio: 1;
 }
 
-.math-answer {
-  display: flex;
-  gap: 0.6rem;
-  width: min(340px, 100%);
-}
-
-.math-input {
-  flex: 1 1 auto;
+/* Tiles: a faint metallic face with a centred pip. Each tile is a perfect
+   square with one shared corner radius, and lifts on hover. */
+.mine-tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1;
   min-width: 0;
-  font: inherit;
-  font-size: 1.05rem;
-  text-align: center;
-  padding: 0.55rem 0.8rem;
-  color: var(--text-hi);
-  background: rgba(255, 255, 255, 0.028);
+  min-height: 0;
+  padding: 0;
   border: 1px solid var(--line-faint);
   border-radius: var(--radius-sm);
-  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
-}
-
-.math-input:focus {
-  outline: none;
-  border-color: var(--line-accent);
-  background: rgba(255, 255, 255, 0.045);
-}
-
-.math-input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.math-submit {
-  margin-top: 0;
-  white-space: nowrap;
-}
-
-.math-feedback {
-  min-height: 1.2em;
-  font-size: 0.84rem;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   color: var(--text-low);
+  cursor: pointer;
+  transition: transform 180ms var(--ease-expo-out), border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease), box-shadow var(--dur) var(--ease),
+    color var(--dur) var(--ease);
 }
 
-.math-feedback.is-right {
+/* Compositor hint — added by js/mines.js only while a tile is animating. */
+.mine-tile.is-animating {
+  will-change: transform, opacity;
+}
+
+.mine-tile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 26%;
+  height: 26%;
+  margin: auto;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.32;
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+/* A soft aura behind the tile — a cyan breath on a safe pick, a red burst on a
+   bomb. On its own layer so both effects stay transform/opacity only. */
+.mine-tile::before {
+  content: '';
+  position: absolute;
+  inset: -30%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 68%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mine-tile:not(:disabled):hover {
+  transform: translateY(-2px) scale(1.04);
+  border-color: var(--line-accent);
+  background: var(--accent-soft);
   color: var(--accent);
+  box-shadow: 0 10px 24px -16px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-.math-feedback.is-wrong {
-  color: #f0a2a2;
+.mine-tile:not(:disabled):active {
+  transform: scale(0.96);
+  border-color: var(--accent);
+  box-shadow: 0 0 22px -4px var(--accent-glow), inset 0 0 18px -6px var(--accent-glow);
+  transition-duration: 90ms;
 }
 
-.math-side {
+.mine-tile:disabled {
+  cursor: default;
+}
+
+.mine-tile.is-safe,
+.mine-tile.is-bomb {
+  transform: none;
+}
+
+.mine-tile.is-safe::after,
+.mine-tile.is-bomb::after {
+  opacity: 0;
+  transform: scale(0.4);
+}
+
+.mine-tile-face {
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: scale(0.4);
+}
+
+/* Safe reveal — a quick scale-pop with a slight upward breath. */
+.mine-tile.is-safe {
+  border-color: var(--line-accent);
+  background: rgba(94, 210, 226, 0.07);
+  box-shadow: 0 0 22px -6px var(--accent-glow), inset 0 0 18px -8px var(--accent-glow);
+  animation: mine-safe-pop 400ms var(--ease-spring) both;
+}
+
+.mine-tile.is-safe .mine-tile-face {
+  animation: mine-face-in 360ms var(--ease-spring) 60ms both;
+}
+
+/* One soft glow pulse radiating out from the tile. */
+.mine-tile.is-safe::before {
+  animation: mine-glow-pulse 300ms var(--ease-expo-out) both;
+}
+
+/* Bomb reveal — the picked mine shakes and flashes; the remaining mines fade
+   in, staggered by js/mines.js through the --reveal-delay custom property. */
+.mine-tile.is-bomb {
+  border-color: rgba(224, 110, 110, 0.5);
+  background: rgba(224, 110, 110, 0.06);
+  box-shadow: 0 0 20px -6px rgba(224, 110, 110, 0.4);
+}
+
+.mine-tile.is-bomb .mine-tile-face {
+  animation: mine-bomb-icon 340ms var(--ease-spring) both;
+}
+
+.mine-tile.is-bomb:not(.is-picked) {
+  animation: mine-bomb-secondary 320ms var(--ease-expo-out) both;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+
+.mine-tile.is-bomb.is-picked {
+  z-index: 2;
+  border-color: #e06e6e;
+  box-shadow: 0 0 26px -4px rgba(224, 110, 110, 0.55);
+  animation: mine-bomb-shake 350ms var(--ease-expo-out) both;
+}
+
+.mine-tile.is-bomb.is-picked::before {
+  background: radial-gradient(
+    circle,
+    rgba(224, 110, 110, 0.6) 0%,
+    rgba(224, 110, 110, 0.18) 48%,
+    transparent 72%
+  );
+  animation: mine-bomb-flash 200ms ease-out both;
+}
+
+/* New-game entry — a diagonal wave from the top-left tile down to the
+   bottom-right, each tile stepped 30ms apart (delays set in js/mines.js). */
+.mine-tile.is-entering {
+  animation: mine-enter 400ms var(--ease-expo-out) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+@keyframes mine-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes mine-safe-pop {
+  0% {
+    transform: scale(0.9) translateY(-2px);
+  }
+  55% {
+    transform: scale(1.06) translateY(0);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes mine-face-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes mine-glow-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+@keyframes mine-bomb-shake {
+  0% {
+    transform: translateX(0);
+  }
+  15% {
+    transform: translateX(-6px);
+  }
+  30% {
+    transform: translateX(6px);
+  }
+  45% {
+    transform: translateX(-4px);
+  }
+  60% {
+    transform: translateX(4px);
+  }
+  80% {
+    transform: translateX(-2px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes mine-bomb-flash {
+  0% {
+    opacity: 0.95;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes mine-bomb-icon {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  60% {
+    transform: scale(1.12);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes mine-bomb-secondary {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.mines-side {
   display: flex;
   flex-direction: column;
 }
 
-.math-stats {
+.mines-stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.4rem;
+  gap: 1.6rem;
   margin: 1.2rem 0 0;
 }
 
-.math-stat dt {
+.mines-stat {
+  transform-origin: left center;
+}
+
+.mines-stat dt {
   font-size: 0.64rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--text-low);
 }
 
-.math-stat dd {
-  margin: 0.15rem 0 0;
-  font-size: 1.1rem;
+.mines-stat dd {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0.2rem 0 0;
+  font-size: 1.25rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--text-hi);
 }
 
-.math-start {
-  align-self: flex-start;
-  margin-top: 1.4rem;
+/* Live multiplier — accent-coloured and bumped on every safe pick. */
+.mines-stat:first-child dd {
+  color: var(--accent);
+}
+
+.mines-stat.is-bump {
+  animation: multiplier-bump 400ms var(--ease-spring) both;
+}
+
+/* The crystal beside the payout breathes softly while its number counts up. */
+.mines-stat.is-counting .crystal-icon {
+  animation: mines-crystal-glow 400ms var(--ease) both;
+}
+
+@keyframes mines-crystal-glow {
+  0% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  45% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 6px var(--accent-glow));
+  }
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+}
+
+@keyframes multiplier-bump {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.mines-label {
+  margin-top: 1.2rem;
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.mines-difficulty {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.mines-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem 0.4rem;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-mid);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+
+.mines-option:hover:not(:disabled) {
+  border-color: var(--line-soft);
+  color: var(--text-hi);
+}
+
+.mines-option.is-active {
+  border-color: var(--line-accent);
+  background: var(--accent-soft);
+  color: var(--text-hi);
+}
+
+.mines-option:disabled {
+  cursor: default;
+}
+
+.mines-option-count {
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.mines-option-note {
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.mines-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.3rem;
+}
+
+.mines-actions .btn {
+  margin-top: 0;
+}
+
+.mines-cash {
+  min-width: 120px;
+}
+
+/* Quick pop the instant a cash-out fires, before the global win celebration. */
+.mines-cash.is-pop {
+  animation: mines-cash-pop 220ms var(--ease-spring) both;
+}
+
+@keyframes mines-cash-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.mines-cash:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  border-color: var(--line-faint);
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: none;
+}
+
+/* Screen-wide red vignette pulse on a bomb hit. Created and toggled by
+   js/mines.js, fixed to the viewport like the celebration layers. */
+.mines-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 240;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle at 50% 50%, transparent 42%, rgba(224, 110, 110, 0.22) 100%);
+}
+
+.mines-vignette.is-on {
+  animation: mines-vignette 300ms var(--ease-expo-out) both;
+}
+
+@keyframes mines-vignette {
+  0% {
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 /* ==========================================================================
@@ -1885,14 +2285,14 @@ body.big-win-active .big-win-vignette {
 
 @media (max-width: 720px) {
   .wheel-panel,
-  .math-panel,
-  .auction-panel {
+  .mines-panel,
+  .case-panel {
     grid-template-columns: minmax(0, 1fr);
   }
 
   .wheel-side,
-  .math-side,
-  .auction-side {
+  .mines-side,
+  .case-side {
     align-items: center;
     text-align: center;
   }
@@ -1902,8 +2302,23 @@ body.big-win-active .big-win-vignette {
   }
 
   .wheel-spin,
-  .math-start {
+  .case-play {
     align-self: center;
+  }
+
+  .mines-stats,
+  .mines-actions {
+    justify-content: center;
+  }
+
+  .mines-stat {
+    transform-origin: center;
+  }
+
+  .mines-difficulty {
+    width: 100%;
+    max-width: 280px;
+    margin-inline: auto;
   }
 
   .modal-dialog {
@@ -1974,7 +2389,555 @@ body.big-win-active .big-win-vignette {
 }
 
 /* ==========================================================================
-   19  REDUCED MOTION
+   19  CELEBRATION
+   ========================================================================== */
+/* --- Win banner: the hero moment ------------------------------------------
+   Outer element owns the fixed centring; `.win-banner-pop` owns the spring
+   entry and expo-in exit (transform/opacity); `.win-banner-float` owns the idle
+   vertical breathing; the label runs its own letter-spacing reveal. Stacking
+   them on separate elements keeps the transform animations from fighting.
+   Choreographed from t=0.20s to t=1.40s in js/celebration.js. */
+.win-banner {
+  position: fixed;
+  top: 42%;
+  left: 50%;
+  z-index: 260; /* above confetti (250), below toasts (300) */
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  text-align: center;
+}
+
+/* Soft scrim so the gold/cyan type stays legible over any backdrop. */
+.win-banner::before {
+  content: '';
+  position: absolute;
+  inset: -55% -70%;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgba(4, 8, 10, 0.74), rgba(4, 8, 10, 0) 74%);
+}
+
+.win-banner[hidden] {
+  display: none;
+}
+
+.win-banner-pop {
+  will-change: transform, opacity;
+}
+
+.win-banner-float {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.win-banner.is-in .win-banner-pop {
+  animation: win-banner-pop 640ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.win-banner.is-in .win-banner-float {
+  animation: win-banner-float 2.8s ease-in-out 700ms infinite alternate;
+}
+
+.win-banner.is-in .win-banner-label {
+  animation: win-banner-track 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.win-banner.is-out .win-banner-pop {
+  animation: win-banner-out 400ms cubic-bezier(0.7, 0, 0.84, 0) both;
+}
+
+.win-banner-label {
+  font-size: clamp(1.15rem, 4.6vw, 1.7rem);
+  font-weight: 800;
+  letter-spacing: 0.26em;
+  text-indent: 0.26em;
+  text-transform: uppercase;
+  background: linear-gradient(96deg, #d9fbff 0%, #5ed2e2 46%, #e8c56a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 16px rgba(94, 210, 226, 0.5));
+}
+
+.win-banner-amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: clamp(2.1rem, 9vw, 3.4rem);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(96deg, #fff4cf 0%, #e8c56a 42%, #5ed2e2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 22px rgba(232, 197, 106, 0.42));
+}
+
+.win-banner-value.is-text {
+  font-size: clamp(1.1rem, 4.4vw, 1.7rem);
+  letter-spacing: 0.01em;
+}
+
+.win-banner-mark {
+  display: inline-flex;
+  align-items: center;
+}
+
+.win-banner-mark .crystal-icon {
+  filter: drop-shadow(0 0 14px rgba(94, 210, 226, 0.75));
+}
+
+@keyframes win-banner-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.7) translateY(14px);
+    filter: blur(7px);
+  }
+  62% {
+    opacity: 1;
+    transform: scale(1.08) translateY(-3px);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes win-banner-float {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-7px);
+  }
+}
+
+/* Animated letter-spacing is a layout property, but the banner is fixed and
+   isolated (pointer-events: none), so it costs nothing to reflow. */
+@keyframes win-banner-track {
+  from {
+    letter-spacing: 0.6em;
+    text-indent: 0.6em;
+    opacity: 0.4;
+  }
+  to {
+    letter-spacing: 0.26em;
+    text-indent: 0.26em;
+    opacity: 1;
+  }
+}
+
+@keyframes win-banner-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.78);
+  }
+}
+
+/* --- Screen light bloom: two pulses, screen-blended -----------------------
+   Strong pulse lands with the result (t=0.08s), then a gentler echo
+   (t=0.38s) so the light reads as having bounced, not just appeared. */
+.win-bloom {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background: radial-gradient(
+    circle at 50% 46%,
+    rgba(94, 210, 226, 0.55) 0%,
+    rgba(94, 210, 226, 0.16) 34%,
+    rgba(94, 210, 226, 0) 66%
+  );
+}
+
+.win-bloom.is-pulse {
+  animation: bloom-strong 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.win-bloom.is-echo {
+  animation: bloom-echo 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes bloom-strong {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  16% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes bloom-echo {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  30% {
+    opacity: 0.5;
+    transform: scale(1.01);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+}
+
+/* --- Confetti: pieces fall from the top of the viewport -------------------
+   The fall, drift and opacity live on the outer element; sway and spin live on
+   the inner flap, so a single element gets both a vertical drop and a
+   paper-like flutter. Every trait is a custom property set per piece in
+   js/confetti.js. */
+.confetti-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 250; /* above content and modal, below toasts (z-index: 300) */
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: 0;
+  left: var(--x, 50%);
+  width: var(--w, 9px);
+  height: var(--h, 14px);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: confetti-fall var(--dur, 3s) cubic-bezier(0.25, 0.6, 0.4, 1)
+    var(--delay, 0s) forwards;
+}
+
+.confetti-flap {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--r, 2px);
+  background: var(--c, var(--accent));
+  will-change: transform;
+  animation: confetti-sway var(--dur, 3s) ease-in-out var(--delay, 0s) infinite;
+}
+
+/* Round pieces. */
+.confetti-piece.is-circle .confetti-flap {
+  border-radius: 50%;
+}
+
+/* Thin ribbons — narrow, tall strips that flutter. */
+.confetti-piece.is-ribbon .confetti-flap {
+  width: 4px;
+  height: 18px;
+  margin-inline: auto;
+  border-radius: 1px;
+}
+
+@keyframes confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -14vh, 0);
+  }
+  8% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--drift, 0px), 112vh, 0);
+  }
+}
+
+@keyframes confetti-sway {
+  0% {
+    transform: translateX(calc(var(--sway, 10px) * -1)) rotate(0deg);
+  }
+  25% {
+    transform: translateX(var(--sway, 10px)) rotate(calc(var(--spin, 540deg) * 0.25));
+  }
+  50% {
+    transform: translateX(calc(var(--sway, 10px) * -1)) rotate(calc(var(--spin, 540deg) * 0.5));
+  }
+  75% {
+    transform: translateX(var(--sway, 10px)) rotate(calc(var(--spin, 540deg) * 0.75));
+  }
+  100% {
+    transform: translateX(calc(var(--sway, 10px) * -1)) rotate(var(--spin, 540deg));
+  }
+}
+
+/* Reduced-motion fallback: a soft pulse, no falling pieces. js/confetti.js
+   skips the pieces entirely when reduced motion is requested and shows this. */
+.win-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    circle at 50% 46%,
+    rgba(94, 210, 226, 0.2) 0%,
+    rgba(94, 210, 226, 0.07) 38%,
+    transparent 64%
+  );
+  transition: opacity 500ms var(--ease);
+}
+
+.win-glow.is-on {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   20  PURCHASE CELEBRATION
+   ========================================================================== */
+/* A short (~1.1s) "yes!" moment for a completed purchase — no confetti and no
+   win banner. Choreographed in js/purchase.js; every layer is transform and
+   opacity only. */
+
+/* Confirmation badge: a centre-screen pill (same slot as the win banner). */
+.purchase-badge {
+  position: fixed;
+  top: 42%;
+  left: 50%;
+  z-index: 270; /* above the modal (200) and confetti (250), below toasts (300) */
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.purchase-badge[hidden] {
+  display: none;
+}
+
+.purchase-badge-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.15rem;
+  border: 1px solid var(--line-accent);
+  border-radius: 999px;
+  background: rgba(10, 12, 14, 0.86);
+  box-shadow:
+    0 0 0 1px rgba(94, 210, 226, 0.12),
+    0 12px 40px -18px rgba(94, 210, 226, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.purchase-badge.is-in .purchase-badge-inner {
+  animation: purchase-badge-pop 340ms var(--ease-spring) both;
+}
+
+.purchase-badge.is-out .purchase-badge-inner {
+  animation: purchase-badge-out 300ms var(--ease-expo-in) both;
+}
+
+.purchase-badge-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #041214;
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(94, 210, 226, 0.7);
+}
+
+.purchase-badge-text {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-hi); /* high contrast on the dark pill */
+}
+
+@keyframes purchase-badge-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  62% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes purchase-badge-out {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+}
+
+/* Light sweep: a single soft highlight crosses the purchased item, like a
+   premium "stamped as owned" pass. Sits over the item's own panel. */
+.purchase-sweep {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.purchase-sweep::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.22) 50%,
+    transparent 70%
+  );
+  opacity: 0;
+  animation: purchase-sweep 500ms var(--ease-expo-out) both;
+}
+
+@keyframes purchase-sweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-26%);
+  }
+  38% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(26%);
+  }
+}
+
+/* Fly-to-inventory: X drives the travel (accelerating, expo-in) while Y adds a
+   slight upward arc on its own layer, so the item curves into the tab. */
+.purchase-fly-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 270; /* above the modal, so the clone reads on top of it */
+  pointer-events: none;
+}
+
+.purchase-fly {
+  position: fixed;
+  will-change: transform, opacity;
+}
+
+.purchase-fly.is-flying {
+  animation: purchase-fly-x 600ms var(--ease-expo-in) both;
+}
+
+.purchase-fly-arc {
+  width: 100%;
+  height: 100%;
+}
+
+.purchase-fly-arc.is-flying {
+  animation: purchase-fly-y 600ms var(--ease-soft) both;
+}
+
+.purchase-fly-inner {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.purchase-fly-inner.is-flying {
+  animation: purchase-fly-shrink 600ms var(--ease-expo-in) both;
+}
+
+.purchase-fly-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.6));
+}
+
+.purchase-fly-gem {
+  display: inline-flex;
+}
+
+@keyframes purchase-fly-x {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(var(--fly-x, 0), 0, 0);
+  }
+}
+
+@keyframes purchase-fly-y {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  58% {
+    transform: translate3d(0, calc(var(--fly-y, 0) * 0.6 - 48px), 0);
+  }
+  100% {
+    transform: translate3d(0, var(--fly-y, 0), 0);
+  }
+}
+
+@keyframes purchase-fly-shrink {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  55% {
+    transform: scale(0.62);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}
+
+/* Destination tab pulse when the clone lands. */
+.primary-nav .nav-link.is-purchase-pulse {
+  animation: purchase-tab-pulse 300ms var(--ease-spring) both;
+}
+
+@keyframes purchase-tab-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(94, 210, 226, 0);
+  }
+  45% {
+    transform: scale(1.15);
+    box-shadow: 0 0 18px -2px rgba(94, 210, 226, 0.6);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(94, 210, 226, 0);
+  }
+}
+
+/* ==========================================================================
+   21  REDUCED MOTION
    ========================================================================== */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1990,24 +2953,18 @@ body.big-win-active .big-win-vignette {
     transform: none;
   }
 
-  /* Big-win effect keeps working, but as a plain fade — no flash, no motion. */
-  @keyframes bloom-fade {
-    0% {
-      opacity: 0;
-    }
-    25% {
-      opacity: 0.5;
-    }
-    100% {
-      opacity: 0;
-    }
+  /* Motion-only layers are removed entirely; the banner and balance counter
+     remain so the win is still communicated (js/celebration.js also skips
+     building them). */
+  .win-bloom,
+  .confetti-layer,
+  .win-glow,
+  .purchase-sweep,
+  .purchase-fly-layer {
+    display: none;
   }
 
-  .wheel-stage.big-win-active .wheel-bloom-halo,
-  .wheel-stage.big-win-active .wheel-bloom-rays,
-  .wheel-stage.big-win-active .wheel-bloom-core,
-  body.big-win-active .big-win-vignette {
-    animation-name: bloom-fade !important;
-    animation-duration: 1600ms !important;
+  .wheel-stage.is-win-pulse {
+    animation: none;
   }
 }

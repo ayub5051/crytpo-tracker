@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<!--
+  BLAZZER OG image template — a 1200x630 canvas that mirrors
+  assets/og/blazzer-og.svg but loads the Inter webfont so the wordmark is
+  pixel-faithful. Open in a browser at exactly 1200x630 and screenshot, or
+  rasterise with a headless tool, then save as assets/og/blazzer-og.png.
+  Kept intentionally standalone: no links to the app's stylesheet.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>BLAZZER — OG image template</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@600;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #0a0a0c;
+      }
+      .og {
+        position: relative;
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: #0a0a0c;
+        font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+      }
+      .og::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(720px 460px at 86% 6%, rgba(94, 210, 226, 0.18), transparent 70%),
+          radial-gradient(680px 420px at 8% 98%, rgba(255, 255, 255, 0.06), transparent 68%);
+      }
+      .og-flame {
+        position: absolute;
+        top: 108px;
+        left: 50%;
+        width: 160px;
+        height: 160px;
+        transform: translateX(-50%);
+        filter: drop-shadow(0 0 30px rgba(94, 210, 226, 0.45));
+      }
+      .og-word {
+        position: absolute;
+        top: 318px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 132px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-indent: 0.08em;
+        color: #f2f3f5;
+        text-shadow: 0 0 36px rgba(94, 210, 226, 0.35);
+      }
+      .og-tag {
+        position: absolute;
+        top: 486px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 34px;
+        font-weight: 600;
+        letter-spacing: 0.34em;
+        text-indent: 0.34em;
+        text-transform: uppercase;
+        color: #5ed2e2;
+      }
+      .og-rule {
+        position: absolute;
+        top: 556px;
+        left: 50%;
+        width: 200px;
+        height: 3px;
+        border-radius: 2px;
+        transform: translateX(-50%);
+        background: #5ed2e2;
+        opacity: 0.55;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="og">
+      <svg class="og-flame" viewBox="0 0 32 32" aria-hidden="true">
+        <defs>
+          <linearGradient id="tpl-flame" x1="11" y1="4" x2="23" y2="29" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#c2f6ff" />
+            <stop offset="0.42" stop-color="#5ed2e2" />
+            <stop offset="1" stop-color="#1f7d92" />
+          </linearGradient>
+        </defs>
+        <path d="M16 4c4 5.4 8 8.2 8 13a8 8 0 1 1-16 0c0-4.8 4-7.6 8-13Z" fill="url(#tpl-flame)" />
+        <path
+          d="M16 13.5c1.9 2.5 3.6 3.8 3.6 6.1a3.6 3.6 0 1 1-7.2 0c0-2.3 1.7-3.6 3.6-6.1Z"
+          fill="#0a0a0c"
+          opacity="0.82"
+        />
+      </svg>
+      <div class="og-word">BLAZZER</div>
+      <div class="og-tag">Spin, Win, Repeat</div>
+      <div class="og-rule"></div>
+    </div>
+  </body>
+</html>

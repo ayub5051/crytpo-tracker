@@ -1,0 +1,82 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="1200"
+  height="630"
+  viewBox="0 0 1200 630"
+  role="img"
+  aria-label="BLAZZER — Spin, Win, Repeat"
+>
+  <!--
+    BLAZZER Open Graph / Twitter card, 1200x630. For a pixel-perfect export
+    with the Inter webfont, prefer assets/og/og-template.html (loads Inter from
+    Google Fonts) and screenshot at 1200x630; otherwise rasterise this SVG with
+    scripts/generate-brand-assets.sh. Social platforms require a raster PNG, so
+    the meta tags point at assets/og/blazzer-og.png.
+  -->
+  <defs>
+    <radialGradient id="og-cyan" cx="86%" cy="6%" r="72%">
+      <stop offset="0" stop-color="#5ed2e2" stop-opacity="0.18" />
+      <stop offset="1" stop-color="#5ed2e2" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="og-white" cx="8%" cy="98%" r="62%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.06" />
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="og-flame" x1="556" y1="120" x2="644" y2="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#c2f6ff" />
+      <stop offset="0.42" stop-color="#5ed2e2" />
+      <stop offset="1" stop-color="#1f7d92" />
+    </linearGradient>
+    <filter id="og-glow" x="-25%" y="-60%" width="150%" height="220%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="#0a0a0c" />
+  <rect width="1200" height="630" fill="url(#og-cyan)" />
+  <rect width="1200" height="630" fill="url(#og-white)" />
+
+  <!-- Flame brand mark -->
+  <path d="M600 108c40 54 80 82 80 130a80 80 0 1 1-160 0c0-48 40-76 80-130Z" fill="url(#og-flame)" />
+  <path
+    d="M600 202c19 25 36 38 36 61a36 36 0 1 1-72 0c0-23 17-36 36-61Z"
+    fill="#0a0a0c"
+    opacity="0.82"
+  />
+
+  <!-- Wordmark -->
+  <text
+    x="600"
+    y="438"
+    text-anchor="middle"
+    font-family="Inter, 'Helvetica Neue', Arial, sans-serif"
+    font-size="132"
+    font-weight="800"
+    letter-spacing="10"
+    fill="#f2f3f5"
+    filter="url(#og-glow)"
+  >
+    BLAZZER
+  </text>
+
+  <!-- Tagline -->
+  <text
+    x="600"
+    y="512"
+    text-anchor="middle"
+    font-family="Inter, 'Helvetica Neue', Arial, sans-serif"
+    font-size="34"
+    font-weight="600"
+    letter-spacing="12"
+    fill="#5ed2e2"
+  >
+    SPIN, WIN, REPEAT
+  </text>
+
+  <rect x="500" y="556" width="200" height="3" rx="1.5" fill="#5ed2e2" opacity="0.55" />
+</svg>

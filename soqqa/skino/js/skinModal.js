@@ -1,5 +1,5 @@
 /* ============================================================================
-   SKINO — skin detail modal
+   BLAZZER — skin detail modal
    A single reusable dialog that shows the full record for a skin: large image,
    name, condition, rarity, description and price. Built lazily so the page
    markup stays clean.
@@ -19,8 +19,10 @@ import {
   formatCrystals,
   onCrystalsChange,
 } from './crystals.js';
+import { crystalIcon } from './icons.js';
 import { record } from './ledger.js';
 import { showToast } from './toast.js';
+import { celebratePurchase } from './purchase.js';
 
 let root = null;
 let lastFocused = null;
@@ -97,12 +99,12 @@ function syncActions() {
     owned > 0 ? `Owned: ${owned}` : '';
 
   const buy = root.querySelector('[data-modal-buy]');
-  buy.textContent = `Buy · ${formatPrice(currentSkin.price)}`;
+  buy.innerHTML = `Buy · ${formatPrice(currentSkin.price)}`;
   buy.classList.toggle('is-short', getCrystals() < currentSkin.price);
 
   const sell = root.querySelector('[data-modal-sell]');
   sell.hidden = owned === 0;
-  sell.textContent = `Sell · ${formatCrystals(sellPrice(currentSkin))} ◆`;
+  sell.innerHTML = `Sell · ${formatCrystals(sellPrice(currentSkin))} ${crystalIcon(14)}`;
 }
 
 function buyCurrent() {
@@ -118,7 +120,9 @@ function buyCurrent() {
     amount: -currentSkin.price,
     skinId: currentSkin.id,
   });
-  showToast(`Added ${currentSkin.weapon} | ${currentSkin.finish} to inventory`, 'success');
+  // The celebration badge now carries the confirmation, so no duplicate toast.
+  // The sweep and fly-clone start from the item panel the buyer is looking at.
+  celebratePurchase({ origin: root?.querySelector('.modal-media') ?? null });
 }
 
 function sellCurrent() {
@@ -167,7 +171,7 @@ export function openSkinModal(skin) {
   modal.querySelector('[data-modal-title]').textContent = `${skin.weapon} | ${skin.finish}`;
   modal.querySelector('[data-modal-condition]').textContent = skin.condition;
   modal.querySelector('[data-modal-desc]').textContent = skin.description;
-  modal.querySelector('[data-modal-price]').textContent = formatPrice(skin.price);
+  modal.querySelector('[data-modal-price]').innerHTML = formatPrice(skin.price);
   syncActions();
 
   lastFocused = document.activeElement;

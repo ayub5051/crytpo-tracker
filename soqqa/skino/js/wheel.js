@@ -1,5 +1,5 @@
 /* ============================================================================
-   SKINO — Wheel mini-game
+   BLAZZER — Wheel mini-game
    A canvas prize wheel. Each spin costs Crystals and pays out Crystals or a
    skin. Outcomes are weighted so the wheel stays roughly break-even (~97%
    return) — generous but not a free-money printer.
@@ -10,6 +10,7 @@ import { spendCrystals, addCrystals, getCrystals, formatCrystals } from './cryst
 import { addToInventory } from './inventory.js';
 import { record } from './ledger.js';
 import { showToast } from './toast.js';
+import { celebrateWin } from './celebration.js';
 
 export const SPIN_COST = 100;
 
@@ -112,34 +113,34 @@ function draw() {
 
   ctx.restore();
 
-  /* Segment labels are drawn RADIALLY, along each wedge's centre line, instead
-     of sitting upright at a fixed point. A radial string stays on the wedge's
-     axis, so its run can never spill into a neighbouring segment — at any
-     rotation, stopped or spinning. `fillText`'s maxWidth condenses the type
-     rather than overflowing, and the left half is flipped 180° so no label
-     ever reads upside-down. Label placement only: segment drawing and the
-     spin/rotation maths above are untouched. */
+  /* Segment labels are BILLBOARDED: each string is positioned on its wedge's
+     centre line but drawn screen-upright, never rotated with the wheel. A
+     horizontal glyph run can't read upside-down or mirrored at any rotation,
+     so the numbers stay legible throughout the spin and settle without a snap
+     when it stops. `fillText`'s maxWidth condenses type to the arc available
+     at the label radius, keeping it clear of neighbouring wedges. Label
+     placement only: segment drawing and the spin/rotation maths above are
+     byte-for-byte untouched. */
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   const hubR = 46; // keep clear of the centre hub
   const innerR = hubR + 34; // start of the readable ring
   const outerR = r - 30; // stay inside the rim
-  const labelRadius = (innerR + outerR) / 2;
-  const maxLabelWidth = outerR - innerR;
-  // A wedge is narrowest at innerR, so that bounds the usable text height.
+  // Sit in the wider outer half of the ring, where a horizontal run has room.
+  const labelRadius = innerR + (outerR - innerR) * 0.62;
+  // Widest a run may get before it would cross into a neighbouring wedge.
+  const maxLabelWidth = 2 * labelRadius * Math.sin(slice / 2) * 0.9;
   const maxFont = Math.max(11, Math.min(24, innerR * slice * 0.86));
   SEGMENTS.forEach((seg, i) => {
     const mid = i * slice + slice / 2 + rotation;
     // Long labels scale down gracefully so they stay legible and contained.
     const size = Math.max(10, Math.min(maxFont, (maxFont * 8) / Math.max(8, seg.label.length)));
-    ctx.save();
-    ctx.rotate(mid); // +x now points along this wedge's centre line
-    ctx.translate(labelRadius, 0);
-    if (Math.cos(mid) < 0) ctx.rotate(Math.PI); // left half reads forwards
+    // Position on the wedge axis; the glyphs themselves stay screen-upright.
+    const x = Math.cos(mid) * labelRadius;
+    const y = Math.sin(mid) * labelRadius;
     ctx.fillStyle = seg.accent ? '#5ed2e2' : '#a2a5ad';
     ctx.font = `600 ${size}px Inter, sans-serif`;
-    ctx.fillText(seg.label, 0, 0, maxLabelWidth);
-    ctx.restore();
+    ctx.fillText(seg.label, x, y, maxLabelWidth);
   });
 
   // Hub
@@ -186,33 +187,17 @@ function setResult(text, variant = '') {
   resultEl.dataset.state = variant;
 }
 
-/* --------------------------------------------------------------------------
-   Big-win bloom
-   A ~2.2s cinematic burst of light from the wheel centre. This only toggles a
-   class — the animation itself lives in style.css — so the spin physics are
-   never involved. Removed again on a timer when the effect has finished.
-   -------------------------------------------------------------------------- */
-const BIG_WIN_MS = 2200;
-let bigWinTimer = 0;
-
-function playBigWin(tier = 'normal') {
-  const stage = canvas?.closest('.wheel-stage');
+/* A subtle scale pulse on the stage, fired the instant the spin stops. It is a
+   CSS class on the wrapper only — the spin animation, timing and easing above
+   are never touched. Skipped under reduced motion. */
+function pulseWheel() {
+  if (reducedMotion) return;
+  const stage = document.querySelector('[data-wheel-stage]');
   if (!stage) return;
-  stage.classList.remove('big-win-active');
-  void stage.offsetWidth; // force reflow so back-to-back wins restart the bloom
-  stage.dataset.winTier = tier;
-  stage.classList.add('big-win-active');
-  document.body.classList.add('big-win-active');
-  window.clearTimeout(bigWinTimer);
-  bigWinTimer = window.setTimeout(endBigWin, reducedMotion ? 1600 : BIG_WIN_MS);
-}
-
-function endBigWin() {
-  document.querySelectorAll('.wheel-stage.big-win-active').forEach((el) => {
-    el.classList.remove('big-win-active');
-    delete el.dataset.winTier;
-  });
-  document.body.classList.remove('big-win-active');
+  stage.classList.remove('is-win-pulse');
+  void stage.offsetWidth; // replay on back-to-back wins
+  stage.classList.add('is-win-pulse');
+  window.setTimeout(() => stage.classList.remove('is-win-pulse'), 460);
 }
 
 function award(seg) {
@@ -221,10 +206,12 @@ function award(seg) {
     record({ type: 'wheel', label: 'Wheel win', amount: seg.value });
     setResult(`Won ${formatCrystals(seg.value)} Crystals`, 'win');
     showToast(`+${formatCrystals(seg.value)} Crystals from the Wheel`, 'success');
-    playBigWin(seg.value >= 250 ? 'big' : 'normal');
+    pulseWheel();
+    celebrateWin({ amount: seg.value, big: seg.value >= 250 });
   } else if (seg.kind === 'skin') {
     const skin = getSkinById(seg.skinId);
-    addToInventory(seg.skinId);
+    // Stage 3: tag the instance with how it was won (shown as "How I got this").
+    addToInventory(seg.skinId, 1, { obtainedVia: 'wheel' });
     record({
       type: 'wheel',
       label: `Wheel win: ${skin.weapon} | ${skin.finish}`,
@@ -233,7 +220,8 @@ function award(seg) {
     });
     setResult(`Won ${skin.weapon} | ${skin.finish}`, 'win');
     showToast(`Wheel win: ${skin.weapon} | ${skin.finish}!`, 'success');
-    playBigWin('big');
+    pulseWheel();
+    celebrateWin({ text: `${skin.weapon} | ${skin.finish}`, big: true });
   } else {
     setResult('No win this time — spin again', 'lose');
   }

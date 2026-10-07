@@ -1,5 +1,5 @@
 /* ============================================================================
-   SKINO — Crystal rewards
+   BLAZZER — Crystal rewards
    A small "Get more Crystals" dialog offering a once-a-day bonus and demo
    top-up packs. Claim state is persisted per calendar day in LocalStorage.
    ========================================================================= */
@@ -7,11 +7,12 @@
 import { addCrystals, getCrystals, formatCrystals, onCrystalsChange } from './crystals.js';
 import { record } from './ledger.js';
 import { showToast } from './toast.js';
+import { crystalIcon } from './icons.js';
 
 export const DAILY_BONUS = 250;
 export const TOPUP_PACKS = [500, 1000, 2500];
 
-const DAILY_KEY = 'skino:dailyClaim';
+const DAILY_KEY = 'blazzer:dailyClaim';
 
 let root = null;
 let tickId = null;
@@ -108,7 +109,7 @@ function build() {
         <div class="reward-packs" data-topup-packs></div>
 
         <p class="rewards-balance">
-          Balance · <span data-rewards-balance>0 ◆</span>
+          Balance · <span data-rewards-balance>0 ${crystalIcon(13)}</span>
         </p>
       </div>
     </div>`;
@@ -119,7 +120,7 @@ function build() {
     btn.type = 'button';
     btn.className = 'reward-pack';
     btn.dataset.topup = String(amount);
-    btn.innerHTML = `<span class="reward-pack-amount">+${formatCrystals(amount)} ◆</span>
+    btn.innerHTML = `<span class="reward-pack-amount">+${formatCrystals(amount)} ${crystalIcon(13)}</span>
       <span class="reward-pack-note">Add</span>`;
     packs.append(btn);
   });
@@ -161,14 +162,16 @@ function refresh() {
   const note = root.querySelector('[data-daily-note]');
 
   button.disabled = !claimable;
-  button.textContent = claimable ? `Claim ${formatCrystals(DAILY_BONUS)} ◆` : 'Claimed';
-  note.textContent = claimable
-    ? `Claim ${formatCrystals(DAILY_BONUS)} ◆ — resets at midnight.`
+  button.innerHTML = claimable
+    ? `Claim ${formatCrystals(DAILY_BONUS)} ${crystalIcon(13)}`
+    : 'Claimed';
+  note.innerHTML = claimable
+    ? `Claim ${formatCrystals(DAILY_BONUS)} ${crystalIcon(12)} — resets at midnight.`
     : `Next bonus in ${formatCountdown(msUntilReset())}.`;
 
-  root.querySelector('[data-rewards-balance]').textContent = `${formatCrystals(
+  root.querySelector('[data-rewards-balance]').innerHTML = `${formatCrystals(
     getCrystals()
-  )} ◆`;
+  )} ${crystalIcon(13)}`;
 }
 
 function onKeydown(event) {

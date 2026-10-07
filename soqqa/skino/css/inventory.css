@@ -1,0 +1,766 @@
+/* ============================================================================
+   BLAZZER — inventory UI (Stage 3.1)
+   Top bar, filter drawer, bulk bar, owner cards and the owner detail modal.
+   Transform/opacity animation only, custom easings, and everything neutralised
+   under prefers-reduced-motion. Cards reuse the catalogue .skin-card base so
+   the two grids stay visually identical; only the owner extras live here.
+   ========================================================================= */
+
+/* ==========================================================================
+   TOP BAR — value / trend / items + controls
+   ========================================================================== */
+
+.inv-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.inv-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.inv-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  min-width: 116px;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.inv-stat-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.inv-stat-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-hi);
+}
+
+.inv-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-low);
+  transition: color var(--dur) var(--ease);
+}
+
+.inv-trend[data-dir='up'] {
+  color: #7bd88f;
+}
+
+.inv-trend[data-dir='down'] {
+  color: #e08a8a;
+}
+
+.inv-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+
+.inv-toggle-btn {
+  margin-top: 0;
+}
+
+.inv-toggle-btn.is-active {
+  color: var(--text-hi);
+  border-color: var(--line-accent);
+  background: var(--accent-soft);
+}
+
+/* ==========================================================================
+   FILTER DRAWER
+   ========================================================================== */
+
+.inv-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+  margin-bottom: 1.3rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.018);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+.inv-filters[hidden] {
+  display: none;
+}
+
+/* When appended un-hidden, ease it in from the style above. */
+.inv-filters:not([hidden]) {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.inv-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 160px;
+}
+
+.inv-filter-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.inv-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.inv-chip {
+  --chip: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.32rem 0.7rem;
+  border: 1px solid var(--line-faint);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-mid);
+  font: inherit;
+  font-size: 0.74rem;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease), transform 160ms var(--ease-expo-out);
+}
+
+.inv-chip::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--chip) 70%, transparent);
+}
+
+.inv-chip:hover {
+  color: var(--text-hi);
+  border-color: var(--line-soft);
+  transform: translateY(-1px);
+}
+
+.inv-chip.is-active {
+  color: var(--text-hi);
+  border-color: color-mix(in srgb, var(--chip) 55%, transparent);
+  background: color-mix(in srgb, var(--chip) 14%, transparent);
+}
+
+.inv-chip[data-inv-group='categories']::before,
+.inv-chip[data-inv-group='wears']::before,
+.inv-chip[data-inv-toggle]::before,
+.inv-chip-reset::before {
+  display: none;
+}
+
+.inv-chip-reset {
+  color: var(--text-low);
+}
+
+/* ==========================================================================
+   BULK ACTION BAR
+   ========================================================================== */
+
+.inv-bulkbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 1.2rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--line-accent);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(94, 210, 226, 0.08), rgba(94, 210, 226, 0.02));
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+.inv-bulkbar[hidden] {
+  display: none;
+}
+
+.inv-bulkbar:not([hidden]) {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.inv-bulkcount {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-hi);
+  font-variant-numeric: tabular-nums;
+}
+
+.inv-bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.inv-bulk-actions .btn {
+  margin-top: 0;
+}
+
+/* ==========================================================================
+   OWNER CARDS
+   ========================================================================== */
+
+.inv-card {
+  cursor: pointer;
+}
+
+/* Hover: gentle scale + a subtle tint in the card's OWN rarity colour — never
+   a generic blue. `--rarity` is set per card in js/skins.js. The surface stays
+   solid (mixed toward the rarity) so nothing bleeds through the frame. */
+.inv-card:hover {
+  transform: scale(1.02) translateY(-2px);
+  border-color: color-mix(in srgb, var(--rarity) 68%, transparent);
+  background: color-mix(in srgb, var(--rarity) 8%, var(--bg-raised));
+  box-shadow:
+    0 22px 48px -30px rgba(0, 0, 0, 0.9),
+    0 0 28px -18px color-mix(in srgb, var(--rarity) 40%, transparent);
+}
+
+.inv-card:active {
+  transform: scale(0.98);
+}
+
+.inv-card.is-selected {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 0 40px -14px var(--accent-glow);
+}
+
+/* Selection check — fully hidden until Bulk Select mode is switched on. */
+.inv-check {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: transparent;
+  border: 1.5px solid var(--line-soft);
+  background: rgba(10, 10, 12, 0.72);
+  opacity: 0;
+  transform: scale(0.85);
+  transition: opacity var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+
+/* Appear only while Bulk Select is enabled — a soft fade, never a pop-in. */
+.card-grid.is-bulk .inv-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Selected: cyan accent + a 150ms back-out pop on the check itself. */
+.inv-card.is-selected .inv-check {
+  opacity: 1;
+  color: #04222a;
+  border-color: var(--accent);
+  background: var(--accent);
+  transform: scale(1);
+  transition: transform 150ms var(--ease-spring), background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+/* Badges over the thumbnail. */
+.inv-owned,
+.inv-stattrak,
+.inv-listed,
+.inv-locked {
+  position: absolute;
+  z-index: 2;
+  padding: 0.16rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.inv-owned {
+  top: 0.6rem;
+  right: 0.6rem;
+  color: var(--accent);
+  background: rgba(10, 10, 12, 0.72);
+  border: 1px solid var(--line-accent);
+}
+
+.inv-stattrak {
+  top: 2.1rem;
+  right: 0.6rem;
+  color: #e8c56a;
+  background: rgba(10, 10, 12, 0.72);
+  border: 1px solid rgba(232, 197, 106, 0.4);
+}
+
+.inv-listed,
+.inv-locked {
+  left: 0.6rem;
+  bottom: 0.6rem;
+  color: var(--text-mid);
+  background: rgba(10, 10, 12, 0.72);
+  border: 1px solid var(--line-soft);
+}
+
+.inv-locked {
+  color: #e08a8a;
+  border-color: rgba(224, 138, 138, 0.4);
+}
+
+/* Sticker preview strip in the card body. */
+.inv-sticker-strip {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.15rem;
+}
+
+.inv-sticker-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, rgba(94, 210, 226, 0.7), rgba(169, 140, 240, 0.55));
+  border: 1px solid var(--line-soft);
+}
+
+/* ==========================================================================
+   OWNER DETAIL MODAL
+   ========================================================================== */
+
+.inv-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 280; /* above the skin modal, below toasts (300) */
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.inv-modal.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.inv-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 5, 7, 0.74);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.inv-dialog {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  width: min(720px, 100%);
+  max-height: min(88vh, 620px);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+  box-shadow: 0 40px 90px -40px rgba(0, 0, 0, 0.95);
+  overflow: hidden;
+  transform: translateY(16px) scale(0.98);
+  transition: transform var(--dur) var(--ease);
+}
+
+.inv-modal.is-open .inv-dialog {
+  transform: translateY(0) scale(1);
+}
+
+.inv-dialog-sm {
+  display: block;
+  grid-template-columns: none;
+  width: min(420px, 100%);
+  padding: 1.5rem;
+}
+
+.inv-modal-close {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--text-mid);
+  border: 1px solid var(--line-faint);
+  background: rgba(10, 10, 12, 0.6);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.inv-modal-close:hover {
+  color: var(--text-hi);
+  border-color: var(--line-soft);
+}
+
+.inv-media {
+  --rarity: var(--accent);
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-right: 1px solid var(--line-faint);
+  background:
+    radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--rarity) 14%, transparent), transparent 62%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012));
+}
+
+.inv-media-bar {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--rarity) 80%, transparent),
+    color-mix(in srgb, var(--rarity) 24%, transparent)
+  );
+}
+
+.inv-media-img {
+  width: 100%;
+  height: 100%;
+  max-height: 340px;
+  object-fit: contain;
+  padding: 12%;
+  filter: drop-shadow(0 14px 30px rgba(0, 0, 0, 0.6));
+}
+
+.inv-media-glyph {
+  display: none;
+  color: var(--text-hi);
+}
+
+.inv-media.is-fallback .inv-media-img {
+  display: none;
+}
+
+.inv-media.is-fallback .inv-media-glyph {
+  display: block;
+}
+
+/* Holo shimmer — a soft band sweeps across the item (transform only). */
+.inv-media-shimmer {
+  position: absolute;
+  inset: -20%;
+  background: linear-gradient(
+    115deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.14) 50%,
+    transparent 60%
+  );
+  opacity: 0;
+  transform: translateX(-40%);
+  pointer-events: none;
+}
+
+.inv-media.is-holo .inv-media-shimmer {
+  opacity: 1;
+  animation: inv-shimmer 3.4s var(--ease-soft) infinite;
+}
+
+@keyframes inv-shimmer {
+  0% { transform: translateX(-60%); }
+  60%, 100% { transform: translateX(60%); }
+}
+
+.inv-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1.4rem 1.5rem;
+  overflow-y: auto;
+}
+
+.inv-rarity {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.inv-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-hi);
+}
+
+.inv-cond {
+  font-size: 0.82rem;
+  color: var(--text-mid);
+}
+
+.inv-copy {
+  margin-top: 0.4rem;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: var(--text-mid);
+}
+
+.inv-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+  margin: 0.2rem 0;
+}
+
+.inv-meta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.inv-meta dt {
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+.inv-meta dd {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--text-hi);
+}
+
+.inv-proof {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.inv-proof:hover {
+  color: var(--text-hi);
+}
+
+/* Sticker list */
+.inv-sticker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.inv-sticker-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.inv-sticker-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(94, 210, 226, 0.7), rgba(169, 140, 240, 0.55));
+  border: 1px solid var(--line-soft);
+}
+
+.inv-sticker-name {
+  flex: 1 1 auto;
+  font-size: 0.78rem;
+  color: var(--text-mid);
+}
+
+.inv-sticker-remove {
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--line-faint);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-low);
+  font: inherit;
+  font-size: 0.68rem;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+
+.inv-sticker-remove:hover {
+  color: #e08a8a;
+  border-color: rgba(224, 138, 138, 0.45);
+}
+
+.inv-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.inv-actions .btn {
+  margin-top: 0;
+}
+
+.inv-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.inv-history {
+  margin-top: auto;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--line-faint);
+  font-size: 0.72rem;
+  color: var(--text-low);
+}
+
+/* Empty state illustration */
+.inv-empty-art {
+  display: grid;
+  place-items: center;
+  margin-bottom: 1.2rem;
+  color: var(--accent);
+  opacity: 0.85;
+  transition: transform var(--dur-slow) var(--ease);
+}
+
+.empty-state:hover .inv-empty-art {
+  transform: translateY(-3px);
+}
+
+/* ==========================================================================
+   RESPONSIVE — 375px pass
+   ========================================================================== */
+
+@media (min-width: 900px) {
+  /* 5–6 per row on desktop, as specified, without fighting the base grid. */
+  [data-inventory-grid] {
+    grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .inv-bar,
+  .inv-controls {
+    align-items: stretch;
+  }
+
+  .inv-controls .field,
+  .inv-controls .field-search {
+    flex: 1 1 100%;
+  }
+
+  .inv-toggle-btn {
+    flex: 1 1 calc(50% - 0.3rem);
+  }
+
+  .inv-dialog {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: 92vh;
+  }
+
+  .inv-media {
+    border-right: 0;
+    border-bottom: 1px solid var(--line-faint);
+  }
+
+  .inv-media-img {
+    max-height: 210px;
+    padding: 8%;
+  }
+}
+
+@media (max-width: 460px) {
+  .inv-stats {
+    width: 100%;
+  }
+
+  .inv-stat {
+    flex: 1 1 calc(50% - 0.3rem);
+    min-width: 0;
+  }
+
+  .inv-bulkbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .inv-bulk-actions .btn {
+    flex: 1 1 auto;
+  }
+
+  .inv-meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ==========================================================================
+   REDUCED MOTION
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .inv-card,
+  .inv-chip,
+  .inv-check,
+  .inv-filters,
+  .inv-bulkbar,
+  .inv-modal,
+  .inv-dialog,
+  .inv-trend {
+    transition: none;
+  }
+
+  .inv-card:hover,
+  .inv-card:active {
+    transform: none;
+  }
+
+  .inv-media.is-holo .inv-media-shimmer {
+    animation: none;
+    opacity: 0;
+  }
+}

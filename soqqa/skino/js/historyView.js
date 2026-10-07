@@ -1,20 +1,21 @@
 /* ============================================================================
-   SKINO — transaction history view
+   BLAZZER — transaction history view
    Newest-first list of ledger entries: purchases, sales, mini-game results and
    rewards, each with its signed Crystal amount.
    ========================================================================= */
 
 import { getLedger, clearLedger, onLedgerChange } from './ledger.js';
 import { formatCrystals } from './crystals.js';
+import { crystalIcon } from './icons.js';
 
 const TYPE_LABEL = {
   purchase: 'Purchase',
   sale: 'Sale',
   wheel: 'Wheel',
-  math: 'Math Challenge',
+  mines: 'Mines',
   daily: 'Daily bonus',
   topup: 'Top-up',
-  auction: 'Auction',
+  case: 'Mystery Case',
   other: 'Activity',
 };
 
@@ -70,10 +71,10 @@ function createRow(entry) {
 
   const amount = document.createElement('span');
   amount.className = `history-amount ${direction(entry.amount)}`;
-  amount.textContent =
+  amount.innerHTML =
     entry.amount === 0
       ? '—'
-      : `${entry.amount > 0 ? '+' : '−'}${formatCrystals(Math.abs(entry.amount))} ◆`;
+      : `${entry.amount > 0 ? '+' : '−'}${formatCrystals(Math.abs(entry.amount))} ${crystalIcon(13)}`;
 
   row.append(dot, main, amount);
   return row;

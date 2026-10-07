@@ -7,18 +7,58 @@
   <meta name="color-scheme" content="dark" />
   <meta
     name="description"
-    content="SKINO — a premium CS2 skin marketplace demo. Browse and manage skins in a refined, minimal interface."
+    content="BLAZZER — spin, win, repeat. A premium CS2 skin marketplace and casino demo, refined to the pixel."
   />
-  <title>SKINO — Premium CS2 Skin Marketplace</title>
+  <title>BLAZZER — Spin, Win, Repeat</title>
+
+  <!-- Icons & PWA -->
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml" />
+  <!-- PNG fallbacks: generate with scripts/generate-brand-assets.sh -->
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+
+  <!-- Open Graph (replace the placeholder origin with the production domain) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="BLAZZER" />
+  <meta property="og:title" content="BLAZZER — Spin, Win, Repeat" />
+  <meta
+    property="og:description"
+    content="A premium CS2 skin marketplace and casino demo. Spin the wheel, dodge the mines, crack the case."
+  />
+  <meta property="og:url" content="https://blazzer.example/" />
+  <meta property="og:image" content="https://blazzer.example/assets/og/blazzer-og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="BLAZZER — Spin, Win, Repeat" />
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="BLAZZER — Spin, Win, Repeat" />
+  <meta
+    name="twitter:description"
+    content="A premium CS2 skin marketplace and casino demo. Spin the wheel, dodge the mines, crack the case."
+  />
+  <meta name="twitter:image" content="https://blazzer.example/assets/og/blazzer-og.png" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
     rel="stylesheet"
   />
 
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="css/live-feed.css" />
+  <link rel="stylesheet" href="css/fair.css" />
+  <link rel="stylesheet" href="css/inventory.css" />
+  <link rel="stylesheet" href="css/promo-slider.css" />
+  <link rel="stylesheet" href="css/marketplace.css" />
+  <link rel="stylesheet" href="css/upgrade.css" />
+  <link rel="stylesheet" href="css/market-modals.css" />
+  <link rel="stylesheet" href="css/trade.css" />
+  <link rel="stylesheet" href="css/trade-celebration.css" />
   <script type="module" src="js/app.js"></script>
 </head>
 <body>
@@ -29,7 +69,7 @@
        ============================================================ -->
   <header class="site-header" id="siteHeader">
     <div class="shell header-inner">
-      <a class="brand" href="#" aria-label="SKINO home">
+      <a class="brand" href="#" aria-label="BLAZZER home">
         <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
             <path
@@ -45,7 +85,7 @@
             />
           </svg>
         </span>
-        <span class="brand-name">SKINO</span>
+        <span class="brand-name">BLAZZER</span>
       </a>
 
       <nav class="primary-nav" aria-label="Primary">
@@ -92,7 +132,7 @@
         <span class="balance-label">Crystals</span>
         <span class="balance-row">
           <span class="balance-value">
-            <span class="balance-currency" aria-hidden="true">◆</span>
+            <span class="balance-currency crystal" data-crystal="18" aria-hidden="true"></span>
             <span data-balance>2,500</span>
           </span>
           <button
@@ -139,6 +179,17 @@
         data-view="market"
         aria-label="Market"
       >
+        <!-- Discount skin slider — replaces the shared hero on this view only.
+             Slides are built in js/promo-slider.js from data/promos.js. -->
+        <div
+          class="promo-slider"
+          data-promo-slider
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="Discounted skins"
+          aria-live="off"
+        ></div>
+
         <div class="view-head">
           <div>
             <h2 class="view-title">Market</h2>
@@ -175,6 +226,36 @@
           </label>
         </div>
 
+        <!-- Market actions: filter drawer + my listings (Stage 3.2) -->
+        <div class="market-toolbar market-toolbar-actions">
+          <button
+            class="btn btn-ghost market-toggle-btn"
+            type="button"
+            data-market-filter-toggle
+            aria-expanded="false"
+            aria-controls="marketFilters"
+          >
+            Filters
+            <span class="market-filter-count" data-market-filter-count hidden>0</span>
+          </button>
+          <button
+            class="btn btn-ghost market-toggle-btn"
+            type="button"
+            data-market-mine-toggle
+            aria-expanded="false"
+            aria-controls="marketMyListings"
+          >
+            My listings
+            <span class="market-filter-count" data-market-mine-count hidden>0</span>
+          </button>
+        </div>
+
+        <!-- Filter drawer — built and wired in js/marketplace.js -->
+        <div class="market-filters" id="marketFilters" data-market-filters></div>
+
+        <!-- My listings — built and wired in js/market-my-listings.js -->
+        <div class="market-my-listings" id="marketMyListings" data-market-my-listings hidden></div>
+
         <div class="card-grid" data-market-grid aria-live="polite"></div>
       </section>
 
@@ -194,25 +275,74 @@
           <span class="view-count" data-inventory-count>0 items</span>
         </div>
 
-        <div class="market-toolbar">
-          <label class="field">
-            <span class="field-label">Sort</span>
-            <select data-inventory-sort>
-              <option value="value-desc">Value · high to low</option>
-              <option value="value-asc">Value · low to high</option>
-              <option value="qty-desc">Quantity</option>
-              <option value="name">Name</option>
-            </select>
-          </label>
-          <div class="inventory-actions">
+        <!-- Value / trend / item top bar — updated in js/inventoryView.js -->
+        <div class="inv-bar">
+          <div class="inv-stats" role="group" aria-label="Inventory summary">
+            <div class="inv-stat">
+              <span class="inv-stat-label">Inventory value</span>
+              <span class="inv-stat-value">
+                <span class="crystal" data-crystal="15" aria-hidden="true"></span>
+                <span data-inv-value>0</span>
+              </span>
+            </div>
+            <div class="inv-stat">
+              <span class="inv-stat-label">This week</span>
+              <span class="inv-trend" data-inv-trend data-dir="flat">—</span>
+            </div>
+            <div class="inv-stat">
+              <span class="inv-stat-label">Items</span>
+              <span class="inv-stat-value" data-inv-items>0</span>
+            </div>
+          </div>
+
+          <div class="inv-controls">
+            <label class="field field-search">
+              <span class="field-label">Search</span>
+              <input type="search" data-inv-search placeholder="Weapon or finish" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span class="field-label">Sort</span>
+              <select data-inv-sort>
+                <option value="newest">Newest</option>
+                <option value="value-desc">Price · high to low</option>
+                <option value="value-asc">Price · low to high</option>
+                <option value="rarity">Rarity</option>
+                <option value="weapon">Weapon</option>
+              </select>
+            </label>
             <button
-              class="btn btn-ghost"
+              class="btn btn-ghost inv-toggle-btn"
               type="button"
-              data-inventory-sell-dupes
-              disabled
+              data-inv-filter-toggle
+              aria-expanded="false"
+              aria-controls="invFilters"
             >
-              No duplicates to sell
+              Filters
             </button>
+            <button
+              class="btn btn-ghost inv-toggle-btn"
+              type="button"
+              data-inv-bulk-toggle
+              aria-pressed="false"
+            >
+              Bulk select
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter drawer (chips are built in js/inventoryView.js) -->
+        <div class="inv-filters" id="invFilters" data-inv-filters hidden></div>
+
+        <!-- Bulk action bar (revealed when items are selected) -->
+        <div class="inv-bulkbar" data-inv-bulkbar hidden>
+          <span class="inv-bulkcount" data-inv-bulk-count>0 selected</span>
+          <div class="inv-bulk-actions">
+            <button class="btn btn-primary" type="button" data-inv-bulk-sell disabled>
+              Sell Selected
+            </button>
+            <button class="btn btn-ghost" type="button" data-inv-bulk-trade>Trade Selected</button>
+            <button class="btn btn-ghost" type="button" data-inv-bulk-upgrade>Upgrade Selected</button>
+            <button class="btn btn-ghost" type="button" data-inv-bulk-cancel>Cancel</button>
           </div>
         </div>
 
@@ -220,7 +350,7 @@
         <div class="card-grid" data-inventory-grid aria-live="polite"></div>
       </section>
 
-      <!-- Games — Wheel and Math Challenge are live; Random Auction is a placeholder -->
+      <!-- Games — Wheel, Mines and Mystery Case are live -->
       <section
         class="view"
         id="view-games"
@@ -233,18 +363,12 @@
             <h2 class="view-title">Games</h2>
             <p class="view-subtitle">Spend Crystals, win skins and more Crystals.</p>
           </div>
-          <span class="view-count">3 live games</span>
+          <span class="view-count">4 live games</span>
         </div>
 
         <div class="wheel-panel">
           <div class="wheel-stage" data-wheel-stage>
             <span class="wheel-pointer" aria-hidden="true"></span>
-            <!-- Big-win light bloom — animated purely via CSS, toggled from js/wheel.js -->
-            <div class="wheel-bloom" aria-hidden="true">
-              <span class="wheel-bloom-halo"></span>
-              <span class="wheel-bloom-rays"></span>
-              <span class="wheel-bloom-core"></span>
-            </div>
             <canvas
               class="wheel-canvas"
               data-wheel-canvas
@@ -258,11 +382,12 @@
             <p class="wheel-eyebrow">Wheel</p>
             <h3 class="wheel-title">Spin the wheel</h3>
             <p class="wheel-copy">
-              Every spin costs <strong>100 ◆</strong>. Land on a prize and it is
+              Every spin costs
+              <strong>100 <span class="crystal" data-crystal="14" aria-hidden="true"></span></strong>. Land on a prize and it is
               credited instantly — Crystals to your balance, skins to your inventory.
             </p>
             <button class="btn btn-primary wheel-spin" type="button" data-wheel-spin>
-              Spin · 100 ◆
+              Spin · 100 <span class="crystal" data-crystal="14" aria-hidden="true"></span>
             </button>
             <p class="wheel-result" data-wheel-result data-state="">
               Press spin to play.
@@ -270,101 +395,145 @@
           </div>
         </div>
 
-        <div class="math-panel" data-math-panel>
-          <div class="math-stage">
-            <p class="math-problem" data-math-problem aria-live="polite">—</p>
-            <form class="math-answer" data-math-form>
-              <input
-                class="math-input"
-                data-math-answer
-                type="text"
-                inputmode="numeric"
-                autocomplete="off"
-                placeholder="?"
-                aria-label="Your answer"
-                disabled
-              />
-              <button
-                class="btn btn-primary math-submit"
-                type="submit"
-                data-math-submit
-                disabled
-              >
-                Answer
-              </button>
-            </form>
-            <p class="math-feedback" data-math-feedback></p>
+        <!-- Mines — board rendered in js/mines.js -->
+        <div class="mines-panel" data-mines-panel>
+          <div class="mines-stage">
+            <div class="mines-grid" data-mines-grid role="group" aria-label="Mines board"></div>
           </div>
-          <div class="math-side">
-            <p class="wheel-eyebrow">Math Challenge</p>
-            <h3 class="wheel-title">Beat the clock</h3>
+          <div class="mines-side">
+            <p class="wheel-eyebrow">Mines</p>
+            <h3 class="wheel-title">Clear the field</h3>
             <p class="wheel-copy">
-              Answer as many as you can in <strong>30 seconds</strong>. Each correct
-              answer banks <strong>15 ◆</strong>; a wrong answer costs
-              <strong>3s</strong>.
+              Pay <strong>100 <span class="crystal" data-crystal="14" aria-hidden="true"></span></strong>
+              to start. Reveal tiles to grow your multiplier — <strong>cash out</strong>
+              before you strike a mine.
             </p>
-            <dl class="math-stats">
-              <div class="math-stat">
-                <dt>Time</dt>
-                <dd data-math-time>30.0s</dd>
+            <dl class="mines-stats">
+              <div class="mines-stat">
+                <dt>Multiplier</dt>
+                <dd data-mines-multiplier>1.00×</dd>
               </div>
-              <div class="math-stat">
-                <dt>Score</dt>
-                <dd data-math-score>0</dd>
-              </div>
-              <div class="math-stat">
-                <dt>Streak</dt>
-                <dd data-math-streak>0</dd>
+              <div class="mines-stat">
+                <dt>Cash out</dt>
+                <dd><span class="crystal" data-crystal="14" aria-hidden="true"></span><span data-mines-payout>0</span></dd>
               </div>
             </dl>
-            <button class="btn btn-primary math-start" type="button" data-math-start>
-              Start round
-            </button>
-            <p class="wheel-result" data-math-result data-state="">Press start to play.</p>
+            <p class="mines-label">Mines on the field</p>
+            <div class="mines-difficulty" data-mines-difficulty role="group" aria-label="Mine count"></div>
+            <div class="mines-actions">
+              <button class="btn btn-primary mines-play" type="button" data-mines-play>
+                Play · 100 <span class="crystal" data-crystal="14" aria-hidden="true"></span>
+              </button>
+              <button class="btn btn-ghost mines-cash" type="button" data-mines-cashout disabled>
+                Cash out
+              </button>
+            </div>
+            <p class="wheel-result" data-mines-result data-state="">Press play to start.</p>
           </div>
         </div>
 
-        <div class="auction-panel" data-auction-panel>
-          <div class="auction-stage">
-            <div class="auction-lot">
-              <img class="auction-img" data-auction-img alt="" />
+        <!-- Mystery Case — reel rendered in js/mysteryCase.js -->
+        <div class="case-panel" data-case-panel>
+          <div class="case-stage">
+            <div class="case-reel" data-case-reel aria-hidden="true">
+              <div class="case-track" data-case-track></div>
             </div>
-            <p class="auction-rarity" data-auction-rarity>—</p>
-            <p class="auction-name" data-auction-name>Mystery lot</p>
+            <span class="case-pointer" aria-hidden="true"></span>
           </div>
-          <div class="auction-side">
-            <p class="wheel-eyebrow">Random Auction</p>
-            <h3 class="wheel-title">Bid on the mystery</h3>
+          <div class="case-side">
+            <p class="wheel-eyebrow">Mystery Case</p>
+            <h3 class="wheel-title">Crack the case</h3>
             <p class="wheel-copy">
-              A hidden skin goes under the hammer. Outbid the house before the clock
-              runs out — win the lot and pay only your final bid.
+              Pick a tier and pay Crystals to open it. Every case pays out —
+              Crystals straight to your balance, or a skin to your inventory.
             </p>
-            <dl class="math-stats">
-              <div class="math-stat">
-                <dt>Current bid</dt>
-                <dd data-auction-bid>—</dd>
+            <div class="case-tiers" data-case-tiers role="group" aria-label="Case tier"></div>
+            <button class="btn btn-primary case-play" type="button" data-case-play>
+              Open · 100 <span class="crystal" data-crystal="14" aria-hidden="true"></span>
+            </button>
+            <p class="wheel-result" data-case-result data-state="">
+              Pick a tier to begin.
+            </p>
+          </div>
+        </div>
+
+        <!-- Upgrade — disc rendered in js/upgradeWheel.js, panel in js/upgrade.js -->
+        <div class="upgrade-panel" data-upgrade-panel>
+          <div class="upgrade-stage" data-upgrade-stage>
+            <span class="upgrade-pointer" aria-hidden="true"></span>
+            <canvas
+              class="upgrade-canvas"
+              data-upgrade-canvas
+              width="520"
+              height="520"
+              role="img"
+              aria-label="Upgrade wheel — the win slice is your chance"
+            ></canvas>
+          </div>
+          <div class="upgrade-side">
+            <p class="wheel-eyebrow">Upgrade</p>
+            <h3 class="wheel-title">Trade up — or lose it</h3>
+            <p class="wheel-copy">
+              Stake items from your inventory for one shot at something bigger.
+              Your chance is <strong>stake ÷ target × 0.95</strong>.
+              <strong>Both outcomes consume the stake.</strong>
+            </p>
+
+            <p class="upgrade-label">
+              Your stake
+              <span class="upgrade-label-count" data-upgrade-count>0 / 10</span>
+            </p>
+            <div class="upgrade-slots" data-upgrade-slots data-empty="true"></div>
+            <div class="upgrade-row">
+              <button class="btn btn-ghost upgrade-add" type="button" data-upgrade-add>
+                Add items
+              </button>
+            </div>
+
+            <p class="upgrade-label">Target</p>
+            <div class="upgrade-target" data-upgrade-target data-empty="true"></div>
+            <div class="upgrade-row">
+              <button class="btn btn-ghost upgrade-choose" type="button" data-upgrade-choose>
+                Choose target
+              </button>
+            </div>
+
+            <dl class="upgrade-stats">
+              <div class="upgrade-stat">
+                <dt>Chance</dt>
+                <dd data-upgrade-chance data-tone="">—</dd>
               </div>
-              <div class="math-stat">
-                <dt>Leader</dt>
-                <dd data-auction-leader>—</dd>
+              <div class="upgrade-stat">
+                <dt>Multiplier</dt>
+                <dd data-upgrade-mult>—</dd>
               </div>
-              <div class="math-stat">
-                <dt>Time</dt>
-                <dd data-auction-time>—</dd>
+              <div class="upgrade-stat">
+                <dt>Stake value</dt>
+                <dd data-upgrade-stake>—</dd>
+              </div>
+              <div class="upgrade-stat">
+                <dt>On a win</dt>
+                <dd data-upgrade-payout>—</dd>
               </div>
             </dl>
-            <div class="auction-actions">
-              <button class="btn btn-primary" type="button" data-auction-start>
-                Start auction
-              </button>
-              <button class="btn btn-ghost" type="button" data-auction-place disabled>
-                Bid
-              </button>
-            </div>
-            <p class="wheel-result" data-auction-result data-state="">
-              Start an auction to bid.
+
+            <p class="upgrade-blocked" data-upgrade-blocked hidden></p>
+
+            <button class="btn btn-primary upgrade-play" type="button" data-upgrade-play disabled>
+              Play
+            </button>
+            <p class="wheel-result upgrade-result" data-upgrade-result data-state="">
+              Pick a stake and a target.
             </p>
           </div>
+        </div>
+
+        <!-- Your recent upgrades — rows filled in by js/upgrade.js -->
+        <div class="upgrade-history-block">
+          <div class="upgrade-history-head">
+            <span class="upgrade-history-title">Recent upgrades</span>
+          </div>
+          <div class="upgrade-history" data-upgrade-history></div>
         </div>
       </section>
 
@@ -396,12 +565,10 @@
   </main>
 
   <footer class="site-footer shell">
-    <span>SKINO</span>
+    <span>BLAZZER</span>
     <span class="footer-sep" aria-hidden="true">·</span>
     <span>Demo environment — no real transactions</span>
   </footer>
 
-  <!-- Screen-wide glow pulse for the big-win moment (see js/wheel.js) -->
-  <div class="big-win-vignette" aria-hidden="true"></div>
 </body>
 </html>

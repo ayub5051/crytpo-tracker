@@ -1,0 +1,36 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 32 32"
+  width="32"
+  height="32"
+  role="img"
+  aria-label="BLAZZER"
+>
+  <!--
+    BLAZZER favicon — a neon-cyan flame on the site's deep-charcoal tile.
+    Deliberately bold so it stays crisp at 16px: one solid flame silhouette,
+    one dark inner cut-out, no hairlines. Colours match the design tokens
+    (base #0a0a0c, accent #5ed2e2). Convert to PNG with
+    scripts/generate-brand-assets.sh.
+  -->
+  <defs>
+    <linearGradient id="bl-flame" x1="11" y1="4" x2="23" y2="29" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#c2f6ff" />
+      <stop offset="0.42" stop-color="#5ed2e2" />
+      <stop offset="1" stop-color="#1f7d92" />
+    </linearGradient>
+    <radialGradient id="bl-glow" cx="16" cy="21" r="14" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5ed2e2" stop-opacity="0.5" />
+      <stop offset="1" stop-color="#5ed2e2" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <rect width="32" height="32" rx="7" fill="#0a0a0c" />
+  <rect x="4" y="9" width="24" height="23" rx="12" fill="url(#bl-glow)" />
+  <path d="M16 4c4 5.4 8 8.2 8 13a8 8 0 1 1-16 0c0-4.8 4-7.6 8-13Z" fill="url(#bl-flame)" />
+  <path
+    d="M16 13.5c1.9 2.5 3.6 3.8 3.6 6.1a3.6 3.6 0 1 1-7.2 0c0-2.3 1.7-3.6 3.6-6.1Z"
+    fill="#0a0a0c"
+    opacity="0.82"
+  />
+</svg>

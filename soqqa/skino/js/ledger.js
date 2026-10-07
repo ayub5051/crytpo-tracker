@@ -1,10 +1,10 @@
 /* ============================================================================
-   SKINO — transaction ledger
+   BLAZZER — transaction ledger
    A newest-first log of everything that moves Crystals or skins: purchases,
    sales, mini-game results and rewards. Capped and persisted in LocalStorage.
    ========================================================================= */
 
-export const LEDGER_KEY = 'skino:ledger';
+export const LEDGER_KEY = 'blazzer:ledger';
 export const MAX_ENTRIES = 100;
 
 const listeners = new Set();

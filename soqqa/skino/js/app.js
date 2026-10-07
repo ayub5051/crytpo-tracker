@@ -1,22 +1,27 @@
 /* ============================================================================
-   SKINO — app shell
-   View navigation (Market / Inventory / Games / History), the Crystal balance
-   readout,
-   market rendering, the inventory view, the skin detail modal, the Wheel,
-   Math Challenge and Random Auction mini-games, the Crystal rewards dialog and
+   BLAZZER — app shell
+   View navigation (Market / Inventory / Games / History), the animated Crystal
+   balance readout, market rendering, the inventory view, the skin detail modal,
+   the Wheel, Mines and Mystery Case mini-games, the Crystal rewards dialog and
    the transaction history.
    ========================================================================= */
 
-import { getSkinById } from './skins.js';
+// Runs the one-time LocalStorage key migration before any module reads a key.
+import './storage.js';
 import { getCrystals, formatCrystals, onCrystalsChange } from './crystals.js';
-import { openSkinModal } from './skinModal.js';
-import { initMarketFilters } from './marketFilters.js';
+import { hydrateCrystalIcons } from './icons.js';
+import { initMarketplace } from './marketplace.js';
+import { initTrade } from './trade.js';
 import { initInventoryView } from './inventoryView.js';
 import { initWheel } from './wheel.js';
-import { initMathGame } from './mathGame.js';
-import { initAuction } from './auction.js';
+import { initMines } from './mines.js';
+import { initMysteryCase } from './mysteryCase.js';
+import { initUpgrade } from './upgrade.js';
 import { initRewards } from './rewards.js';
 import { initHistoryView } from './historyView.js';
+import { initLiveFeed } from './live-feed.js';
+import { initFair } from './fair-ui.js';
+import { initPromoSlider } from './promo-slider.js';
 
 const VIEWS = ['market', 'inventory', 'games', 'history'];
 const TRANSITION_MS = 500;
@@ -115,53 +120,103 @@ if (document.fonts?.ready) {
 }
 
 /* --------------------------------------------------------- Crystal balance */
+/* The balance counts up (never snaps) and scale-pulses on every change, so a
+   win reads as the number physically climbing — the t=0.25s layer of the win
+   choreography in js/celebration.js. Reduced motion snaps straight to the new
+   value with no pulse. */
 
 const balanceEl = document.querySelector('[data-balance]');
+const balanceBox = balanceEl?.closest('.balance');
+const reducedMotion =
+  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
-function renderBalance(value = getCrystals()) {
-  if (balanceEl) balanceEl.textContent = formatCrystals(value);
+const BALANCE_COUNT_MS = 800;
+const BALANCE_SPEND_MS = 400; // spends are snappy; wins hold the beat
+const BALANCE_WIN_DELAY = 200; // wins land the count at ~t=0.25s of the celebration
+let shownBalance = getCrystals();
+let balanceRaf = 0;
+let balanceDelay = 0;
+let balanceGlowTimer = 0;
+
+function paintBalance(value) {
+  if (balanceEl) balanceEl.textContent = formatCrystals(Math.round(value));
 }
 
-renderBalance();
+/**
+ * Count the shown balance → `to` with an ease-out curve, pulsing. A rise takes
+ * ~0.8s (a win); a fall takes ~0.4s and dims the gem to read as a spend.
+ */
+function countBalance(to, duration = BALANCE_COUNT_MS, spend = false) {
+  const from = shownBalance;
+  const t0 = performance.now();
+
+  // Restart the pulse for each change, picking the rise or spend treatment.
+  balanceBox?.classList.remove('is-counting', 'is-spending');
+  void balanceBox?.offsetWidth;
+  balanceBox?.classList.add(spend ? 'is-spending' : 'is-counting');
+
+  const step = (now) => {
+    const p = Math.min(1, (now - t0) / duration);
+    const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+    paintBalance(from + (to - from) * eased);
+    if (p < 1) {
+      balanceRaf = requestAnimationFrame(step);
+    } else {
+      shownBalance = to;
+      paintBalance(to);
+    }
+  };
+  balanceRaf = requestAnimationFrame(step);
+
+  window.clearTimeout(balanceGlowTimer);
+  balanceGlowTimer = window.setTimeout(
+    () => balanceBox?.classList.remove('is-counting', 'is-spending'),
+    duration + 120
+  );
+}
+
+function renderBalance(value = getCrystals(), { animate = true } = {}) {
+  if (!balanceEl) return;
+  const target = Math.max(0, Math.round(value));
+  window.cancelAnimationFrame(balanceRaf);
+  window.clearTimeout(balanceDelay);
+
+  if (!animate || reducedMotion || target === shownBalance) {
+    paintBalance(target);
+    shownBalance = target;
+    return;
+  }
+
+  // A rise is a win: hold the count a beat so it lands inside the celebration
+  // timeline. A fall (spending) is snappy and immediate.
+  if (target > shownBalance) {
+    balanceDelay = window.setTimeout(() => countBalance(target), BALANCE_WIN_DELAY);
+  } else {
+    // A spend: quick count-down with the dimmed-gem treatment.
+    countBalance(target, BALANCE_SPEND_MS, true);
+  }
+}
+
+hydrateCrystalIcons();
+renderBalance(getCrystals(), { animate: false });
 onCrystalsChange(renderBalance);
 
 /* ------------------------------------------ market, inventory & mini-games */
 
-const marketGrid = document.querySelector('[data-market-grid]');
-
-initMarketFilters();
+initMarketplace();
 initInventoryView();
+// Trading is route-driven (/trade/:id); it mounts only when the URL asks for it.
+initTrade();
 initWheel();
-initMathGame();
-initAuction();
+initMines();
+initMysteryCase();
 initRewards();
 initHistoryView();
-
-/* Clicking a card (or activating it with the keyboard) opens the detail modal. */
-function cardSkin(event) {
-  const card = event.target.closest('.skin-card');
-  return card ? getSkinById(card.dataset.skinId) : null;
-}
-
-function wireCardGrid(grid) {
-  if (!grid) return;
-
-  grid.addEventListener('click', (event) => {
-    const skin = cardSkin(event);
-    if (skin) openSkinModal(skin);
-  });
-
-  grid.addEventListener('keydown', (event) => {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    const skin = cardSkin(event);
-    if (!skin) return;
-    event.preventDefault();
-    openSkinModal(skin);
-  });
-}
-
-// Delegated, so re-rendered cards (filters, inventory) stay clickable.
-wireCardGrid(marketGrid);
-wireCardGrid(document.querySelector('[data-inventory-grid]'));
+// Live feed is best-effort: a missing server must never break the app.
+initLiveFeed().catch((err) => console.warn('[live-feed] init failed:', err));
+initFair();
+// Upgrade settles through the fair pipeline, so it mounts after initFair().
+initUpgrade();
+initPromoSlider();
 
 syncTriggers(current);
