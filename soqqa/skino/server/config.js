@@ -11,9 +11,6 @@ import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(dirname, '..'); // the static site root (skino/)
-console.log('[config] dirname:', dirname);
-console.log('[config] root:', root);
-console.log('[config] index.html exists:', fs.existsSync(path.join(root, 'index.html')));
 function toBool(value, fallback = false) {
   if (value === undefined || value === null || value === '') return fallback;
   return /^(1|true|yes|on)$/i.test(String(value).trim());
