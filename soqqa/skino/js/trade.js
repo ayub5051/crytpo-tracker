@@ -37,9 +37,6 @@ export const MAX_ITEMS_PER_SIDE = 20;
 export const TRADE_TTL_MS = 24 * 60 * 60 * 1000;
 const TRADE_LOCK_MS = 7 * 24 * 60 * 60 * 1000;
 
-const reducedMotion =
-  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-
 const listeners = new Set();
 
 /* --------------------------------------------------------------- utilities */
@@ -698,7 +695,10 @@ function render() {
     lastRenderedStatus = 'completed';
     const received = trade.received || [];
     const total = received.reduce((n, i) => n + (i.value || 0), 0);
-    if (!reducedMotion) celebrateTrade({ items: received, total });
+    // celebrateTrade() owns its own reduced-motion path (static "Trade complete"
+    // copy + fade, no item choreography), so the feedback is never skipped — only
+    // the animation is. The trade state update above runs on both paths.
+    celebrateTrade({ items: received, total });
   }
 }
 
