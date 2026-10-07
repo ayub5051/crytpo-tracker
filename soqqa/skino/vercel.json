@@ -1,13 +1,18 @@
 {
   "version": 2,
   "builds": [
-    { "src": "server/index.js", "use": "@vercel/node" }
+    { "src": "server/index.js", "use": "@vercel/node" },
+    { "src": "*.css", "use": "@vercel/static" },
+    { "src": "*.js", "use": "@vercel/static" },
+    { "src": "css/*.css", "use": "@vercel/static" },
+    { "src": "js/*.js", "use": "@vercel/static" },
+    { "src": "assets/**", "use": "@vercel/static" },
+    { "src": "*.html", "use": "@vercel/static" },
+    { "src": "*.webmanifest", "use": "@vercel/static" }
   ],
   "routes": [
+    { "src": "/(.*\\.(css|js|html|webmanifest|png|jpg|jpeg|svg|gif|webp|ico|woff|woff2|ttf|eot))", "dest": "/$1" },
     { "src": "/(css|js|assets|data|docs|scripts|fonts)/(.*)", "dest": "/$1/$2" },
-    { "src": "/(.*\\.css)", "dest": "/$1" },
-    { "src": "/(.*\\.js)", "dest": "/$1" },
-    { "src": "/(.*\\.(png|jpg|jpeg|svg|gif|webp|ico|woff|woff2|ttf|eot|json|webmanifest))", "dest": "/$1" },
     { "src": "/(.*)", "dest": "server/index.js" }
   ]
 }
