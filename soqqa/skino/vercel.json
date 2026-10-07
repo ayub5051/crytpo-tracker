@@ -2,16 +2,17 @@
   "version": 2,
   "builds": [
     { "src": "server/index.js", "use": "@vercel/node" },
+    { "src": "*.html", "use": "@vercel/static" },
     { "src": "*.css", "use": "@vercel/static" },
     { "src": "*.js", "use": "@vercel/static" },
     { "src": "css/*.css", "use": "@vercel/static" },
     { "src": "js/*.js", "use": "@vercel/static" },
     { "src": "data/*.js", "use": "@vercel/static" },
     { "src": "assets/**", "use": "@vercel/static" },
-    { "src": "*.html", "use": "@vercel/static" },
     { "src": "*.webmanifest", "use": "@vercel/static" }
   ],
   "routes": [
+    { "src": "/", "dest": "/index.html" },
     { "src": "/(.*\\.(css|js|html|webmanifest|png|jpg|jpeg|svg|gif|webp|ico|woff|woff2|ttf|eot))", "dest": "/$1" },
     { "src": "/(css|js|data|assets|docs|scripts|fonts)/(.*)", "dest": "/$1/$2" },
     { "src": "/(.*)", "dest": "server/index.js" }
