@@ -2,7 +2,7 @@
   "name": "blazzer",
   "version": "0.1.0",
   "private": true,
-  "description": "BLAZZER — premium CS2 skin marketplace + casino. Static client plus a Node/Express, WebSocket, Redis and Postgres backend.",
+  "description": "BLAZZER \u2014 premium CS2 skin marketplace + casino. Static client plus a Node/Express, WebSocket, Redis and Postgres backend.",
   "type": "module",
   "engines": {
     "node": ">=20"
@@ -30,5 +30,8 @@
   },
   "devDependencies": {
     "prisma": "^5.19.1"
+  },
+  "prisma": {
+    "schema": "server/prisma/schema.prisma"
   }
 }
