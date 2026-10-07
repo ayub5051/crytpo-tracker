@@ -8,6 +8,8 @@
     "node": ">=20"
   },
   "scripts": {
+    "build": "prisma generate",
+    "postinstall": "prisma generate",
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
     "simulate": "node server/scripts/simulate.js",
